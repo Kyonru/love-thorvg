@@ -61,6 +61,8 @@ function App:update(dt)
   if not self.paused then self.elapsed = self.elapsed + dt end
   if self.experiment == 'vending' then
     self.vending:update(dt, self.paused)
+  elseif self.experiment == 'map' then
+    self.map:update(dt, self.paused)
   elseif self.experiment == 'stencil' then
     self.stencil:update(dt, self.paused)
   end

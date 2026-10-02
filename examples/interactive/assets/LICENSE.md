@@ -18,3 +18,7 @@ under the repository's [MIT license](../../../LICENSE).
 - [`dominican-republic-hit.svg`](dominican-republic-hit.svg) — generated from
   `dominican-republic.svg` for province color picking. It inherits the source
   artwork's licensing status and is not independently cleared for redistribution.
+- [`dominican-republic-draw.json`](dominican-republic-draw.json) — generated
+  Lottie trim-path animation derived from `dominican-republic.svg`. It inherits
+  the source artwork's licensing status and is not independently cleared for
+  redistribution.

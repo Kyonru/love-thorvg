@@ -113,7 +113,9 @@ Changes to interaction, frame caching, or render statistics must also be tested
 in `examples/interactive`. Hover at least one product through two complete
 loops, activate it once, and verify the second hover loop reports cache hits.
 On the map experiment, hover and select both a mainland province and a detached
-island, then use the arrow keys and Enter to verify keyboard selection.
+island, then use the arrow keys and Enter to verify keyboard selection. Press
+`R` and confirm the Lottie path-drawing entrance replays before returning to the
+interactive SVG.
 
 Example assets need an entry in that example's `assets/LICENSE.md`. Link the
 local file and its original source page, name the applicable license, and record

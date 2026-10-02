@@ -32,16 +32,21 @@ and frame-cache activity.
 
 ## 02 · Interactive SVG map
 
-The Dominican Republic SVG is rendered normally for display. A second,
-color-coded derivative is rendered once and sampled on the CPU for pixel-precise
-province hit testing. A small shader uses the same hit-map texture to highlight
-hovered and selected regions, so interaction does not rerasterize the SVG or
-require duplicate polygon geometry in Lua. Detached island paths share their
-province's encoded color and behave as one target.
+The Dominican Republic paths are also encoded as a one-shot Lottie trim-path
+animation. When the experiment appears, its borders trace from west to east and
+the map fill resolves behind them. The presentation then hands off to the normal
+SVG and a second, color-coded derivative sampled on the CPU for pixel-precise
+province hit testing. A small shader uses that hit-map texture to highlight
+hovered and selected regions without rerasterizing the SVG or duplicating its
+polygon geometry in Lua. Detached island paths share their province's encoded
+color and behave as one target. The entrance uses four vector layers and a
+420-pixel-wide raster target to keep its short CPU-rendered sequence responsive;
+the higher-resolution interactive SVG takes over afterward.
 
 - Mouse: hover a province; click to select it.
 - Arrow keys: browse provinces alphabetically.
 - Enter: select the focused province.
+- `R`: clear selection and replay the path-drawing entrance.
 
 ## 03 · SVG stencil
 

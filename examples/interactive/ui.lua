@@ -93,7 +93,7 @@ function ui.drawMap(theme, fonts, map, performance, rail, compact)
     love.graphics.printf(active.name .. ' · ' .. active.iso, x, y + 66, width, 'right')
     theme.setColor(theme.muted)
     love.graphics.setFont(fonts.body)
-    love.graphics.printf('Hover and click · Arrows browse · Enter selects · Tab switches · R resets',
+    love.graphics.printf('Hover and click · Arrows browse · Enter selects · Tab switches · R replays',
       x, y + 94, width, 'left')
     return
   end
@@ -101,7 +101,7 @@ function ui.drawMap(theme, fonts, map, performance, rail, compact)
   theme.setColor(theme.muted)
   love.graphics.setFont(fonts.body)
   love.graphics.printf(
-    'One SVG draws the map. A hidden color-coded render provides pixel-accurate province hit testing, including detached islands.',
+    'A Lottie trim-path entrance traces the geography, then hands off to the SVG and its pixel-accurate province hit map.',
     x, y + 112, width, 'left')
 
   local statusY = y + 212
@@ -109,19 +109,25 @@ function ui.drawMap(theme, fonts, map, performance, rail, compact)
   love.graphics.line(x, statusY, x + width, statusY)
   theme.setColor(theme.cyan)
   love.graphics.setFont(fonts.label)
-  love.graphics.print(active.name:upper(), x, statusY + 18)
+  love.graphics.print(map.presenting and 'DRAWING THE MAP' or active.name:upper(),
+    x, statusY + 18)
   theme.setColor(theme.muted)
-  love.graphics.print(('REGION  %02d / %02d · %s'):format(
-    map:activeIndex(), #map.regions, active.iso), x, statusY + 43)
-  love.graphics.print(('TYPE  %s · POSTAL  %s'):format(active.kind:upper(), active.postal),
-    x, statusY + 65)
+  love.graphics.print(map.presenting and
+    ('LOTTIE FRAME  %02d / %02d'):format(map.presentationFrame + 1,
+      map.presentation.totalFrames) or
+    ('REGION  %02d / %02d · %s'):format(map:activeIndex(), #map.regions, active.iso),
+    x, statusY + 43)
+  love.graphics.print(map.presenting and 'CLICK OR PRESS AN ARROW TO SKIP' or
+    ('TYPE  %s · POSTAL  %s'):format(active.kind:upper(), active.postal), x, statusY + 65)
   love.graphics.print(selected and ('SELECTED  ' .. selected.name) or 'SELECTED  —',
     x, statusY + 87)
   love.graphics.print(('%d FPS · %d DRAWS · %.1f MB GPU · %.1f MB LUA'):format(
     performance.fps, performance.drawCalls, performance.textureMiB, performance.luaMiB),
     x, statusY + 113)
-  love.graphics.print(('%d TARGETS · %d SVG PATHS · HIT MAP %dx%d'):format(
-    #map.regions, map.pathCount, map.hitMap.width, map.hitMap.height), x, statusY + 135)
+  love.graphics.print(map.presenting and ('LOTTIE %dx%d · 4 VECTOR LAYERS'):format(
+    map.presentation.width, map.presentation.height) or
+    ('%d TARGETS · %d SVG PATHS · HIT MAP %dx%d'):format(
+      #map.regions, map.pathCount, map.hitMap.width, map.hitMap.height), x, statusY + 135)
 
   local controlsY = statusY + 176
   drawKey(theme, fonts, x, controlsY, 'MOUSE', 'Hover a province')
@@ -131,7 +137,7 @@ function ui.drawMap(theme, fonts, map, performance, rail, compact)
     map.inputMode == 'keyboard')
   drawKey(theme, fonts, x, controlsY + 114, 'ENTER', 'Select focused province')
   drawKey(theme, fonts, x, controlsY + 152, 'TAB', 'SVG stencil')
-  drawKey(theme, fonts, x, controlsY + 190, 'R', 'Reset selection')
+  drawKey(theme, fonts, x, controlsY + 190, 'R', 'Replay entrance')
 end
 
 function ui.drawStencil(theme, fonts, stencil, rail, paused, compact)
