@@ -34,6 +34,18 @@ cd examples/basic
 Use any arrow key to rotate between the SVG and Lottie examples. Press `R` to
 restart the active animation.
 
+To explore SVG-driven clipping:
+
+```sh
+cd examples/svg
+/Applications/love.app/Contents/MacOS/love .
+```
+
+This playground uses a rendered SVG as an arbitrary stencil for ordinary LÖVE
+drawing. Rotate the shape with the left and right arrows, adjust its alpha
+cutoff with the up and down arrows, and press `S` to compare the clipped and
+unclipped result.
+
 ## Install
 
 Copy the complete `love_thorvg/` directory into your game:
