@@ -12,6 +12,9 @@ Options:
 - `speed`: playback multiplier; defaults to `1`.
 - `progress`: initial normalized progress; defaults to `0`.
 - `filter`: LÖVE texture filter (`linear` or `nearest`); defaults to `linear`.
+- `frameCache`: maximum number of rendered frames retained as GPU textures;
+  defaults to `0` (disabled). Use a small value for interfaces that revisit
+  frames while scrubbing.
 - `threads`: ThorVG worker count. The first engine initialization fixes this
   value for the process; `0` lets rendering remain on the caller thread.
 - `mimeType`: override format detection.
@@ -34,11 +37,26 @@ Public metadata fields are `duration`, `totalFrames`, `intrinsicWidth`, and
 - `seek(seconds)`: selects animation time.
 - `resize(width, height)`: recreates the reusable target only when dimensions change.
 - `render()`: rasterizes and uploads only when dirty; returns whether work occurred.
+- `clearCache()`: releases all cached frame textures while keeping the document usable.
+- `getCacheStats()`: returns `enabled`, `size`, `limit`, `hits`, `misses`, and
+  `evictions`.
 - `draw(x, y, rotation, sx, sy, ox, oy)`: renders if needed, then draws the texture.
 - `getImage()`: renders if needed and returns the reusable LÖVE `Image`.
 - `release()`: immediately releases native and LÖVE resources; it is idempotent.
 
 `Document` also has a finalizer, but explicit `release()` is recommended.
+
+## Frame cache
+
+The optional cache is a least-recently-used cache of completed LÖVE textures.
+It avoids both ThorVG rasterization and texture upload when a previously visited
+animation position is requested. Cache keys preserve progress to one thousandth
+of an animation frame. Resizing or calling `clearCache()` releases every cached
+texture.
+
+Each entry uses approximately `width * height * 4` bytes of GPU memory, plus
+driver overhead. For example, eight 256-by-256 frames require about 2 MiB. Keep
+the default disabled for animations that move forward without revisiting frames.
 
 ## Pixel contract
 

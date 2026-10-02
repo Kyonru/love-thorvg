@@ -102,6 +102,43 @@ local function nativeError(buffer, fallback)
   return message ~= '' and message or fallback
 end
 
+local function releaseFrameCache(self)
+  if not self.frameCache then return end
+  for _, entry in pairs(self.frameCache) do entry.image:release() end
+  self.frameCache = {}
+  self.frameCacheSize = 0
+  self.image = self.uploadImage
+end
+
+local function frameCacheKey(self)
+  local frame = self.totalFrames > 1 and self.progress * (self.totalFrames - 1) or 0
+  return math.floor(frame * 1000 + 0.5)
+end
+
+local function cacheFrame(self)
+  local key = frameCacheKey(self)
+  self.cacheClock = self.cacheClock + 1
+  local image = love.graphics.newImage(self.imageData)
+  image:setFilter(self.filter, self.filter)
+  self.frameCache[key] = {image = image, used = self.cacheClock}
+  self.frameCacheSize = self.frameCacheSize + 1
+  self.image = image
+
+  if self.frameCacheSize <= self.frameCacheLimit then return end
+  local oldestKey, oldestUse
+  for candidate, entry in pairs(self.frameCache) do
+    if candidate ~= key and (not oldestUse or entry.used < oldestUse) then
+      oldestKey, oldestUse = candidate, entry.used
+    end
+  end
+  if oldestKey then
+    self.frameCache[oldestKey].image:release()
+    self.frameCache[oldestKey] = nil
+    self.frameCacheSize = self.frameCacheSize - 1
+    self.cacheEvictions = self.cacheEvictions + 1
+  end
+end
+
 local function assetRoot(path)
   return path:match('^(.*[/\\])') or ''
 end
@@ -157,13 +194,23 @@ local function allocateTarget(self, width, height)
   assert(width >= 1 and height >= 1, 'render dimensions must be positive')
   self.width = math.floor(width + 0.5)
   self.height = math.floor(height + 0.5)
+  releaseFrameCache(self)
+  if self.imageData then
+    self.imageData:release()
+    self.imageData = nil
+  end
   self.imageData = love.image.newImageData(self.width, self.height, 'rgba8')
-  if self.image then
-    self.image:release()
+  if self.uploadImage then
+    self.uploadImage:release()
+    self.uploadImage = nil
+  end
+  if self.frameCacheLimit == 0 then
+    self.uploadImage = love.graphics.newImage(self.imageData)
+    self.uploadImage:setFilter(self.filter, self.filter)
+    self.image = self.uploadImage
+  else
     self.image = nil
   end
-  self.image = love.graphics.newImage(self.imageData)
-  self.image:setFilter(self.filter, self.filter)
   self.dirty = true
 end
 
@@ -213,9 +260,38 @@ function Document:resize(width, height)
   return self
 end
 
+function Document:clearCache()
+  releaseFrameCache(self)
+  self.dirty = true
+  return self
+end
+
+function Document:getCacheStats()
+  return {
+    enabled = self.frameCacheLimit > 0,
+    size = self.frameCacheSize,
+    limit = self.frameCacheLimit,
+    hits = self.cacheHits,
+    misses = self.cacheMisses,
+    evictions = self.cacheEvictions,
+  }
+end
+
 function Document:render()
   assert(self.handle ~= nil, 'document has been released')
   if not self.dirty then return false end
+  if self.frameCacheLimit > 0 then
+    local entry = self.frameCache[frameCacheKey(self)]
+    if entry then
+      self.cacheClock = self.cacheClock + 1
+      entry.used = self.cacheClock
+      self.cacheHits = self.cacheHits + 1
+      self.image = entry.image
+      self.dirty = false
+      return false
+    end
+    self.cacheMisses = self.cacheMisses + 1
+  end
   local errorBuffer = ffi.new('char[512]')
   local result = native.love_thorvg_document_render(
     self.handle,
@@ -227,7 +303,12 @@ function Document:render()
     errorBuffer,
     512)
   if result ~= 0 then error(nativeError(errorBuffer, 'ThorVG render failed'), 2) end
-  self.image:replacePixels(self.imageData)
+  if self.frameCacheLimit > 0 then
+    cacheFrame(self)
+  else
+    self.uploadImage:replacePixels(self.imageData)
+    self.image = self.uploadImage
+  end
   self.dirty = false
   return true
 end
@@ -250,7 +331,9 @@ function Document:release()
   native.love_thorvg_document_destroy(handle)
   self.handle = nil
   if self.assetCallback then self.assetCallback:free(); self.assetCallback = nil end
-  if self.image then self.image:release(); self.image = nil end
+  releaseFrameCache(self)
+  if self.uploadImage then self.uploadImage:release(); self.uploadImage = nil end
+  self.image = nil
   if self.imageData then self.imageData:release(); self.imageData = nil end
 end
 
@@ -288,6 +371,13 @@ function M.new(path, options)
     intrinsicWidth = tonumber(intrinsicWidth),
     intrinsicHeight = tonumber(intrinsicHeight),
     filter = options.filter or 'linear',
+    frameCacheLimit = math.max(0, math.floor(tonumber(options.frameCache) or 0)),
+    frameCache = {},
+    frameCacheSize = 0,
+    cacheClock = 0,
+    cacheHits = 0,
+    cacheMisses = 0,
+    cacheEvictions = 0,
     progress = -1,
     time = 0,
     speed = options.speed or 1,

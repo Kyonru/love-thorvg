@@ -135,6 +135,20 @@ animation:play()
 Calling `render`, `draw`, or `getImage` repeatedly without changing progress or
 size reuses the existing frame and does not rerasterize or re-upload it.
 
+For timelines that frequently revisit frames, enable a small bounded cache:
+
+```lua
+local animation = thorvg.new('assets/animation.json', {
+  width = 256,
+  height = 256,
+  frameCache = 8,
+})
+```
+
+Cached frames avoid both rasterization and upload. The cache uses approximately
+`width * height * 4 * frameCache` bytes of GPU memory and is cleared whenever
+the document is resized. Leave it disabled for ordinary forward playback.
+
 ## Runtime considerations
 
 Rendering currently uses ThorVG's CPU backend followed by a CPU-to-GPU texture
