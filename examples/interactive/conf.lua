@@ -1,5 +1,5 @@
 function love.conf(t)
-  t.window.title = 'love-thorvg · SVG stencil lab'
+  t.window.title = 'love-thorvg · interactive vector lab'
   t.window.width = 1040
   t.window.height = 700
   t.window.minwidth = 620

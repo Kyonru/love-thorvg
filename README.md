@@ -27,17 +27,17 @@ game directories and `.love` archives.
 On an Apple Silicon Mac with LÖVE installed in `/Applications`:
 
 ```sh
-cd examples/basic
+cd examples/asset-browser
 /Applications/love.app/Contents/MacOS/love .
 ```
 
 Use any arrow key to rotate between the SVG and Lottie examples. Press `R` to
 restart the active animation.
 
-To explore SVG-driven clipping:
+To explore SVG-driven clipping and marker-driven Lottie interaction:
 
 ```sh
-cd examples/svg
+cd examples/interactive
 /Applications/love.app/Contents/MacOS/love .
 ```
 
@@ -45,6 +45,9 @@ This playground includes an SVG-driven stencil and an interactive vending
 machine. Hover or keyboard-focus any of its nine products to play the matching
 authored Lottie segment, then click or press Enter to run its selection
 sequence. Press `Tab` to switch experiments.
+
+Each example includes an `assets/LICENSE.md` manifest linking its local files
+and recording the available source and licensing information.
 
 ## Install
 

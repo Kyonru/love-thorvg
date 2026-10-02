@@ -1,4 +1,4 @@
-# Vector playground
+# Interactive vector lab
 
 This example explores capabilities that fixed PNG artwork does not provide.
 Press `Tab` to switch between the experiments.
@@ -50,3 +50,9 @@ Shared controls:
 - `Tab`: switch experiments.
 - `R`: reset the active state.
 - Escape: quit.
+
+`main.lua` only connects LÖVE callbacks. `app.lua` coordinates shared layout
+and experiment switching, while each implementation lives under
+`experiments/`. Presentation helpers and colors live in `ui.lua` and
+`theme.lua`. See [`assets/LICENSE.md`](assets/LICENSE.md) before redistributing
+the sample artwork.

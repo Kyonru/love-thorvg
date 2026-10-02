@@ -1,5 +1,5 @@
 function love.conf(t)
-  t.window.title = 'love-thorvg examples'
+  t.window.title = 'love-thorvg · asset browser'
   t.window.width = 720
   t.window.height = 720
   t.window.minwidth = 560
