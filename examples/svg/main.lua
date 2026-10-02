@@ -16,20 +16,39 @@ local colors = {
 }
 
 local mask
-local coffee
+local vending
 local stencilShader
 local fonts = {}
 local stage = {x = 0, y = 0, size = 1}
+local vendingRect = {x = 0, y = 0, width = 1, height = 1}
 local rail = {x = 0, y = 0, width = 1}
 local rotation = -0.12
 local cutoff = 0.5
 local elapsed = 0
 local paused = false
 local stencilEnabled = true
-local experiment = 1
-local coffeeProgress = 0
-local coffeeManual = false
-local assetStats = {vectorKB = 0, spriteMiB = 0}
+local experiment = 2
+local hoveredItem
+local selectedItem
+local vendingState = 'idle'
+local vendingFrame = 0
+local vendingAccumulator = 0
+local inputMode = 'mouse'
+local cursors = {}
+local assetStats = {vectorKB = 0}
+local performance = {
+  fps = 0,
+  drawCalls = 0,
+  textureMiB = 0,
+  luaMiB = 0,
+}
+
+local VENDING_FPS = 60
+local VENDING_WIDTH = 1080
+local VENDING_HEIGHT = 810
+local HOVER_STARTS = {15, 75, 135, 195, 255, 315, 375, 435, 495}
+local CLICK_STARTS = {555, 675, 795, 913, 1031, 1147, 1251, 1370, 1485}
+local CLICK_DURATIONS = {120, 121, 117, 117, 115, 103, 118, 114, 108}
 
 local function setColor(color, alpha)
   love.graphics.setColor(color[1], color[2], color[3], alpha or color[4] or 1)
@@ -53,8 +72,13 @@ local function layout()
     rail.width = width - 56
   end
 
+  vendingRect.width = stage.size
+  vendingRect.height = math.floor(stage.size * VENDING_HEIGHT / VENDING_WIDTH + 0.5)
+  vendingRect.x = stage.x
+  vendingRect.y = stage.y + math.floor((stage.size - vendingRect.height) * 0.5)
+
   if mask then mask:resize(stage.size, stage.size) end
-  if coffee then coffee:resize(stage.size, stage.size) end
+  if vending then vending:resize(vendingRect.width, vendingRect.height) end
 end
 
 local function drawMask()
@@ -122,15 +146,63 @@ local function drawStage()
   love.graphics.rectangle('line', stage.x, stage.y, stage.size, stage.size, 24, 24)
 end
 
-local function drawCoffeeStage()
-  local x, y, size = stage.x, stage.y, stage.size
+local function drawVendingStage()
   love.graphics.setColor(1, 1, 1, 1)
-  coffee:setProgress(coffeeProgress)
-  coffee:draw(x, y)
+  vending:setProgress(vendingFrame / math.max(1, vending.totalFrames - 1))
+  vending:draw(vendingRect.x, vendingRect.y)
 
   setColor(colors.ink, 0.12)
   love.graphics.setLineWidth(1)
-  love.graphics.rectangle('line', x, y, size, size, 18, 18)
+  love.graphics.rectangle('line', vendingRect.x, vendingRect.y,
+    vendingRect.width, vendingRect.height, 18, 18)
+end
+
+local function itemAt(x, y)
+  if x < vendingRect.x or x >= vendingRect.x + vendingRect.width or
+      y < vendingRect.y or y >= vendingRect.y + vendingRect.height then
+    return nil
+  end
+
+  local assetX = (x - vendingRect.x) * VENDING_WIDTH / vendingRect.width
+  local assetY = (y - vendingRect.y) * VENDING_HEIGHT / vendingRect.height
+  local gridX, gridY = 168, 170
+  local cellWidth, cellHeight = 182, 180
+  if assetX < gridX or assetX >= gridX + cellWidth * 3 or
+      assetY < gridY or assetY >= gridY + cellHeight * 3 then
+    return nil
+  end
+
+  local column = math.floor((assetX - gridX) / cellWidth)
+  local row = math.floor((assetY - gridY) / cellHeight)
+  return row * 3 + column + 1
+end
+
+local function setHoveredItem(index, source)
+  inputMode = source or inputMode
+  if vendingState == 'selecting' or hoveredItem == index then return end
+  hoveredItem = index
+  vendingState = index and 'hovering' or 'idle'
+  vendingFrame = index and HOVER_STARTS[index] or 0
+  vendingAccumulator = 0
+end
+
+local function activateItem(index)
+  if not index then return end
+  hoveredItem = index
+  selectedItem = index
+  vendingState = 'selecting'
+  vendingFrame = CLICK_STARTS[index]
+  vendingAccumulator = 0
+  paused = false
+end
+
+local function moveFocus(deltaColumn, deltaRow)
+  local index = hoveredItem or selectedItem or 1
+  local column = (index - 1) % 3
+  local row = math.floor((index - 1) / 3)
+  column = (column + deltaColumn) % 3
+  row = (row + deltaRow) % 3
+  setHoveredItem(row * 3 + column + 1, 'keyboard')
 end
 
 local function drawKey(x, y, key, label, active)
@@ -145,53 +217,68 @@ local function drawKey(x, y, key, label, active)
   love.graphics.print(label, x + keyWidth + 12, y + 5)
 end
 
-local function drawCoffeeRail(x, y, width, compact)
-  setColor(colors.cyan)
-  love.graphics.setFont(fonts.label)
-  love.graphics.print('COFFEE MATCH CUT', x, y)
-
+local function drawVendingRail(x, y, width, compact)
   setColor(colors.ink)
   love.graphics.setFont(compact and fonts.compactTitle or fonts.title)
-  love.graphics.printf(compact and 'One cup. Three moods.' or 'One cup.\nThree moods.',
-    x, y + 30, width, 'left')
+  love.graphics.printf('Pick a drink.', x, y, width, 'left')
 
   if compact then
     setColor(colors.muted)
     love.graphics.setFont(fonts.body)
-    love.graphics.printf('LEFT/RIGHT scrub    SPACE pause    TAB stencil    R reset',
-      x, y + 72, width, 'left')
+    love.graphics.printf('Hover or arrows to focus · Click or Enter to select · Tab switches',
+      x, y + 44, width, 'left')
+    love.graphics.printf(('%d FPS · %d draws · %.1f MB GPU · %.1f MB Lua'):format(
+      performance.fps, performance.drawCalls, performance.textureMiB, performance.luaMiB),
+      x, y + 68, width, 'left')
     return
   end
 
   setColor(colors.muted)
   love.graphics.setFont(fonts.body)
   love.graphics.printf(
-    'The cup holds the visual beat while its silhouette, packaging pattern, steam, lid, and palette match-cut between roasts.',
-    x, y + 178, width, 'left')
+    'Nine hover loops and nine purchase sequences live in one Lottie. LÖVE owns hit-testing and state; ThorVG draws the chosen segment.',
+    x, y + 92, width, 'left')
 
-  local statusY = y + 270
+  local statusY = y + 190
   setColor(colors.line)
   love.graphics.line(x, statusY, x + width, statusY)
   setColor(colors.cyan)
   love.graphics.setFont(fonts.label)
-  love.graphics.print(('LOOP  %03d%%'):format(math.floor(coffeeProgress * 100 + 0.5)), x, statusY + 18)
+  local stateLabel = vendingState == 'selecting' and 'DISPENSING' or
+    (hoveredItem and 'READY TO SELECT' or 'WAITING FOR INPUT')
+  love.graphics.print(stateLabel, x, statusY + 18)
   setColor(colors.muted)
-  love.graphics.print(('ONE VECTOR TIMELINE  %.1f KB'):format(assetStats.vectorKB), x, statusY + 43)
-  love.graphics.printf(('%d coordinated frames. The same 500 px PNG sequence is about %.0f MiB decoded.'):format(
-    coffee.totalFrames, assetStats.spriteMiB), x, statusY + 69, width, 'left')
+  love.graphics.print(hoveredItem and ('ITEM  %02d / 09'):format(hoveredItem) or 'ITEM  —',
+    x, statusY + 43)
+  love.graphics.print(('LOTTIE  %.0f KB · %d MARKED STATES'):format(assetStats.vectorKB, 18),
+    x, statusY + 65)
 
-  local controlsY = statusY + 134
-  drawKey(x, controlsY, 'LEFT RIGHT', 'Scrub timeline')
-  drawKey(x, controlsY + 38, 'SPACE', paused and 'Resume loop' or 'Pause loop', paused)
-  drawKey(x, controlsY + 76, 'TAB', 'Stencil experiment')
-  drawKey(x, controlsY + 114, 'R', 'Reset')
+  local renderStats = vending:getRenderStats()
+  local cacheStats = vending:getCacheStats()
+  love.graphics.print(('%d FPS · %d DRAWS · %.1f MB GPU · %.1f MB LUA'):format(
+    performance.fps, performance.drawCalls, performance.textureMiB, performance.luaMiB),
+    x, statusY + 91)
+  love.graphics.print(('RASTER %.1f MS · UPLOAD %.1f MS'):format(
+    renderStats.lastRasterSeconds * 1000, renderStats.lastUploadSeconds * 1000),
+    x, statusY + 113)
+  love.graphics.print(('CACHE %d/%d · %d HITS · %d MISSES'):format(
+    cacheStats.size, cacheStats.limit, cacheStats.hits, cacheStats.misses),
+    x, statusY + 135)
+
+  local controlsY = statusY + 176
+  drawKey(x, controlsY, 'MOUSE', 'Hover a drink')
+  drawKey(x, controlsY + 38, 'ARROWS', 'Move focus', inputMode == 'keyboard')
+  drawKey(x, controlsY + 76, 'CLICK ENTER', 'Select drink', vendingState == 'selecting')
+  drawKey(x, controlsY + 114, 'SPACE', paused and 'Resume motion' or 'Pause motion', paused)
+  drawKey(x, controlsY + 152, 'TAB', 'Stencil experiment')
+  drawKey(x, controlsY + 190, 'R', 'Reset')
 end
 
 local function drawRail()
   local x, y, width = rail.x, rail.y, rail.width
   local compact = love.graphics.getWidth() < 820
   if experiment == 2 then
-    drawCoffeeRail(x, y, width, compact)
+    drawVendingRail(x, y, width, compact)
     return
   end
   setColor(colors.cyan)
@@ -237,7 +324,7 @@ local function drawRail()
   drawKey(x, controlsY + 76, 'S', 'Toggle stencil', stencilEnabled)
   drawKey(x, controlsY + 114, 'SPACE', paused and 'Resume motion' or 'Pause motion', paused)
   drawKey(x, controlsY + 152, 'R', 'Reset')
-  drawKey(x, controlsY + 190, 'TAB', 'Coffee match cut')
+  drawKey(x, controlsY + 190, 'TAB', 'Interactive vending')
 end
 
 local function reset()
@@ -246,8 +333,12 @@ local function reset()
   elapsed = 0
   paused = false
   stencilEnabled = true
-  coffeeProgress = 0
-  coffeeManual = false
+  hoveredItem = nil
+  selectedItem = nil
+  vendingState = 'idle'
+  vendingFrame = 0
+  vendingAccumulator = 0
+  inputMode = 'mouse'
 end
 
 function love.load()
@@ -276,15 +367,17 @@ function love.load()
     autoplay = false,
     filter = 'linear',
   })
-  coffee = thorvg.new('assets/coffee-match.json', {
-    width = 500,
-    height = 500,
+  vending = thorvg.new('assets/vending-machine.json', {
+    width = 540,
+    height = 405,
     autoplay = false,
     filter = 'linear',
+    frameCache = 36,
   })
-  local vectorInfo = love.filesystem.getInfo('assets/coffee-match.json')
+  local vectorInfo = love.filesystem.getInfo('assets/vending-machine.json')
   assetStats.vectorKB = vectorInfo.size / 1024
-  assetStats.spriteMiB = 500 * 500 * 4 * coffee.totalFrames / (1024 * 1024)
+  cursors.arrow = love.mouse.getSystemCursor('arrow')
+  cursors.hand = love.mouse.getSystemCursor('hand')
   layout()
 end
 
@@ -301,14 +394,25 @@ function love.update(dt)
     if love.keyboard.isDown('up') then cutoff = math.min(0.95, cutoff + dt * 0.5) end
     if love.keyboard.isDown('down') then cutoff = math.max(0.05, cutoff - dt * 0.5) end
   else
-    local scrubDirection = (love.keyboard.isDown('right') and 1 or 0) -
-      (love.keyboard.isDown('left') and 1 or 0)
-    if scrubDirection ~= 0 then
-      paused = true
-      coffeeManual = true
-      coffeeProgress = math.max(0, math.min(1, coffeeProgress + scrubDirection * dt * 0.35))
-    elseif not paused and not coffeeManual then
-      coffeeProgress = (elapsed / coffee.duration) % 1
+    if paused or vendingState == 'idle' then return end
+    vendingAccumulator = vendingAccumulator + dt
+    if vendingAccumulator < 1 / 30 then return end
+    local step = vendingAccumulator
+    vendingAccumulator = 0
+    vendingFrame = vendingFrame + step * VENDING_FPS
+
+    if vendingState == 'hovering' then
+      local startFrame = HOVER_STARTS[hoveredItem]
+      vendingFrame = startFrame + (vendingFrame - startFrame) % 60
+    elseif vendingState == 'selecting' then
+      local endFrame = CLICK_STARTS[selectedItem] + CLICK_DURATIONS[selectedItem] - 1
+      if vendingFrame >= endFrame then
+        if inputMode == 'mouse' then
+          hoveredItem = itemAt(love.mouse.getPosition())
+        end
+        vendingState = hoveredItem and 'hovering' or 'idle'
+        vendingFrame = hoveredItem and HOVER_STARTS[hoveredItem] or 0
+      end
     end
   end
 end
@@ -318,24 +422,58 @@ function love.keypressed(key)
     stencilEnabled = not stencilEnabled
   elseif key == 'space' then
     paused = not paused
-    if not paused then coffeeManual = false end
   elseif key == 'r' then
     reset()
   elseif key == 'tab' then
     experiment = experiment == 1 and 2 or 1
     paused = false
-    coffeeManual = false
+    if experiment == 2 then
+      setHoveredItem(itemAt(love.mouse.getPosition()), 'mouse')
+    else
+      love.mouse.setCursor(cursors.arrow)
+    end
+  elseif experiment == 2 and key == 'left' then
+    moveFocus(-1, 0)
+  elseif experiment == 2 and key == 'right' then
+    moveFocus(1, 0)
+  elseif experiment == 2 and key == 'up' then
+    moveFocus(0, -1)
+  elseif experiment == 2 and key == 'down' then
+    moveFocus(0, 1)
+  elseif experiment == 2 and (key == 'return' or key == 'kpenter') then
+    activateItem(hoveredItem or selectedItem or 1)
   elseif key == 'escape' then
     love.event.quit()
   end
 end
 
+function love.mousemoved(x, y)
+  if experiment ~= 2 then return end
+  local item = itemAt(x, y)
+  setHoveredItem(item, 'mouse')
+  love.mouse.setCursor(item and cursors.hand or cursors.arrow)
+end
+
+function love.mousepressed(x, y, button)
+  if experiment == 2 and button == 1 then activateItem(itemAt(x, y)) end
+end
+
+function love.touchpressed(_, x, y)
+  if experiment == 2 then activateItem(itemAt(x, y)) end
+end
+
 function love.draw()
-  if experiment == 1 then drawStage() else drawCoffeeStage() end
+  if experiment == 1 then drawStage() else drawVendingStage() end
   drawRail()
+
+  local graphicsStats = love.graphics.getStats()
+  performance.fps = love.timer.getFPS()
+  performance.drawCalls = graphicsStats.drawcalls
+  performance.textureMiB = graphicsStats.texturememory / (1024 * 1024)
+  performance.luaMiB = collectgarbage('count') / 1024
 end
 
 function love.quit()
   if mask then mask:release() end
-  if coffee then coffee:release() end
+  if vending then vending:release() end
 end

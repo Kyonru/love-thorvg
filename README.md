@@ -41,10 +41,10 @@ cd examples/svg
 /Applications/love.app/Contents/MacOS/love .
 ```
 
-This playground includes an SVG-driven stencil and an original coffee packaging
-match cut where silhouette, pattern, palette, lid, and steam animate as one
-designer-authored timeline. Press `Tab` to switch experiments; the on-screen
-controls explain each one.
+This playground includes an SVG-driven stencil and an interactive vending
+machine. Hover or keyboard-focus any of its nine products to play the matching
+authored Lottie segment, then click or press Enter to run its selection
+sequence. Press `Tab` to switch experiments.
 
 ## Install
 
