@@ -124,7 +124,7 @@ function ui.drawMap(theme, fonts, map, performance, rail, compact)
   love.graphics.print(('%d FPS · %d DRAWS · %.1f MB GPU · %.1f MB LUA'):format(
     performance.fps, performance.drawCalls, performance.textureMiB, performance.luaMiB),
     x, statusY + 113)
-  love.graphics.print(map.presenting and ('LOTTIE %dx%d · 4 VECTOR LAYERS'):format(
+  love.graphics.print(map.presenting and ('LOTTIE %dx%d · 6 VECTOR LAYERS'):format(
     map.presentation.width, map.presentation.height) or
     ('%d TARGETS · %d SVG PATHS · HIT MAP %dx%d'):format(
       #map.regions, map.pathCount, map.hitMap.width, map.hitMap.height), x, statusY + 135)

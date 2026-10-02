@@ -39,7 +39,7 @@ SVG and a second, color-coded derivative sampled on the CPU for pixel-precise
 province hit testing. A small shader uses that hit-map texture to highlight
 hovered and selected regions without rerasterizing the SVG or duplicating its
 polygon geometry in Lua. Detached island paths share their province's encoded
-color and behave as one target. The entrance uses four vector layers and a
+color and behave as one target. The entrance uses six vector layers and a
 420-pixel-wide raster target to keep its short CPU-rendered sequence responsive;
 the higher-resolution interactive SVG takes over afterward.
 

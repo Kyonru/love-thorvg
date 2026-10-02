@@ -142,6 +142,7 @@ function Map:sampleAt(x, y)
 end
 
 function Map:mousemoved(x, y)
+  if self.presenting then return end
   self.hoveredIndex = self:sampleAt(x, y)
   if self.hoveredIndex then
     self.focusIndex = self.hoveredIndex
