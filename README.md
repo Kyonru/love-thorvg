@@ -42,8 +42,9 @@ cd examples/svg
 ```
 
 This playground compares vector rendering with fixed PNG artwork. It includes
-an SVG-driven stencil and a live vector path morph beside a PNG snapshot. Press
-`Tab` to switch experiments; the on-screen controls explain each one.
+an SVG-driven stencil and a layered Bézier timeline beside an exact PNG
+snapshot. Press `Tab` to switch experiments; the on-screen controls explain
+each one.
 
 ## Install
 

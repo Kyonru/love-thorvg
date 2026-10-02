@@ -24,17 +24,22 @@ The stencil is binary, so the shader discards pixels below the selected alpha
 cutoff. A future exploration can compare this with a Canvas-based alpha mask,
 which preserves partially transparent antialiased edges.
 
-## 02 · Vector path morph versus PNG
+## 02 · Designer timeline versus PNG
 
-ThorVG interpolates a vector path through circle, star, and rounded-square
-keyframes. A real 96-by-96 PNG snapshot sits beside it at the same display
-size. The comparison demonstrates that a single vector animation can produce
-continuous states at the target resolution; a PNG needs a separate raster
-frame for every state.
+For one hand-authored polygon, `flux` and `love.graphics.polygon` are the better
+tools. This experiment starts where that approach becomes infrastructure: one
+imported timeline coordinates a cubic Bézier contour morph, independent
+rotation and opacity tracks, orbiting nodes, and an animated trimmed stroke.
+
+A real 96-by-96 PNG snapshot of the exact first frame sits beside the live
+asset at the same display size. The vector side continuously rerasterizes its
+curves at the target resolution; reproducing the timeline with PNGs requires a
+separate raster frame for every state.
 
 The pinned ThorVG SVG loader treats SVG documents as static artwork, so the
-morph is stored as Lottie path keyframes and rendered through the same ThorVG
-document API. The UI calls this out rather than implying SVG SMIL support.
+designer timeline is stored as Lottie path keyframes and rendered through the
+same ThorVG document API. The UI calls this out rather than implying SVG SMIL
+support.
 
 - Left/right: pause and scrub the morph.
 - Space: pause or resume automatic morphing.

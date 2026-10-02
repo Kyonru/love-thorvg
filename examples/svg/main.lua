@@ -56,7 +56,7 @@ local function layout()
   end
 
   if mask then mask:resize(stage.size, stage.size) end
-  morphSize = math.max(96, math.floor(stage.size * (love.graphics.getWidth() < 820 and 0.36 or 0.38)))
+  morphSize = math.max(96, math.floor(stage.size * (love.graphics.getWidth() < 820 and 0.42 or 0.46)))
   if morph then morph:resize(morphSize, morphSize) end
 end
 
@@ -156,11 +156,12 @@ local function drawMorphStage()
   local rightPaneX = x + gutter * 2 + paneWidth
   local rightX = rightPaneX + (paneWidth - visualSize) * 0.5
 
-  drawComparisonLabel('VECTOR PATH · LIVE', x + gutter, y + 24, paneWidth, true)
-  drawComparisonLabel('PNG · SNAPSHOT', rightPaneX, y + 24, paneWidth, false)
+  drawComparisonLabel('LAYERED VECTOR · LIVE', x + gutter, y + 24, paneWidth, true)
+  drawComparisonLabel('PNG · ONE FRAME', rightPaneX, y + 24, paneWidth, false)
   drawCheckerboard(leftX, visualY, visualSize)
   drawCheckerboard(rightX, visualY, visualSize)
 
+  love.graphics.setColor(1, 1, 1, 1)
   morph:setProgress(morphProgress)
   morph:draw(leftX + visualSize * 0.5, visualY + visualSize * 0.5, 0,
     visualSize / morphSize, visualSize / morphSize, morphSize * 0.5, morphSize * 0.5)
@@ -173,8 +174,8 @@ local function drawMorphStage()
   local captionY = visualY + visualSize + math.max(20, size * 0.055)
   setColor(colors.ink)
   love.graphics.setFont(fonts.body)
-  love.graphics.printf('Smooth geometry\nat any progress', x + gutter, captionY, paneWidth, 'center')
-  love.graphics.printf('One fixed state\nat one resolution', rightPaneX, captionY, paneWidth, 'center')
+  love.graphics.printf('Bézier morph\n+ trim + tracks', x + gutter, captionY, paneWidth, 'center')
+  love.graphics.printf('Fixed pixels\n+ one state', rightPaneX, captionY, paneWidth, 'center')
 
   setColor(colors.line)
   love.graphics.line(x + size * 0.5, y + 20, x + size * 0.5, y + size - 20)
@@ -200,13 +201,13 @@ local function drawMorphRail(x, y, width, compact)
 
   setColor(colors.ink)
   love.graphics.setFont(compact and fonts.compactTitle or fonts.title)
-  love.graphics.printf(compact and 'One path, every in-between' or 'One path,\nevery in-between',
+  love.graphics.printf(compact and 'One asset, coordinated motion' or 'One asset,\ncoordinated motion',
     x, y + 30, width, 'left')
 
   if compact then
     setColor(colors.muted)
     love.graphics.setFont(fonts.body)
-    love.graphics.printf('← → scrub    SPACE pause    TAB switch    R reset',
+    love.graphics.printf('LEFT/RIGHT scrub    SPACE pause    TAB switch    R reset',
       x, y + 72, width, 'left')
     return
   end
@@ -214,10 +215,10 @@ local function drawMorphRail(x, y, width, compact)
   setColor(colors.muted)
   love.graphics.setFont(fonts.body)
   love.graphics.printf(
-    'ThorVG interpolates vector path keyframes. The PNG can only scale or be replaced by another image.',
-    x, y + 132, width, 'left')
+    'For one polygon, use flux. ThorVG earns its place when a designer ships Bézier paths, trim animation, and layered tracks as one timeline.',
+    x, y + 178, width, 'left')
 
-  local statusY = y + 218
+  local statusY = y + 270
   setColor(colors.line)
   love.graphics.line(x, statusY, x + width, statusY)
   setColor(colors.cyan)
@@ -226,11 +227,11 @@ local function drawMorphRail(x, y, width, compact)
   setColor(colors.muted)
   love.graphics.print(('VECTOR  %.1f KB'):format(assetStats.vectorKB), x, statusY + 43)
   love.graphics.print(('PNG SNAPSHOT  %.1f KB'):format(assetStats.pngKB), x, statusY + 65)
-  love.graphics.printf(('A %d-frame PNG sequence at 256 px is about %.0f MiB decoded.'):format(
+  love.graphics.printf(('3 layers · curved path · trim track. %d PNG frames at 256 px are about %.0f MiB decoded.'):format(
     morph.totalFrames, assetStats.spriteMiB), x, statusY + 91, width, 'left')
 
   local controlsY = statusY + 148
-  drawKey(x, controlsY, '← →', 'Scrub morph')
+  drawKey(x, controlsY, 'LEFT RIGHT', 'Scrub morph')
   drawKey(x, controlsY + 38, 'SPACE', paused and 'Resume morph' or 'Pause morph', paused)
   drawKey(x, controlsY + 76, 'TAB', 'Stencil experiment')
   drawKey(x, controlsY + 114, 'R', 'Reset')
@@ -259,7 +260,7 @@ local function drawRail()
       x, y + 34, width, 'right')
     setColor(colors.muted)
     love.graphics.setFont(fonts.body)
-    love.graphics.printf('← → rotate    ↑ ↓ edge    S stencil    TAB switch    R reset',
+    love.graphics.printf('LEFT/RIGHT rotate    UP/DOWN edge    S stencil    TAB switch    R reset',
       x, y + 72, width, 'left')
     return
   end
@@ -281,8 +282,8 @@ local function drawRail()
   love.graphics.print(('ALPHA CUTOFF  %.2f'):format(cutoff), x, statusY + 65)
 
   local controlsY = statusY + 108
-  drawKey(x, controlsY, '← →', 'Rotate SVG')
-  drawKey(x, controlsY + 38, '↑ ↓', 'Adjust edge cutoff')
+  drawKey(x, controlsY, 'LEFT RIGHT', 'Rotate SVG')
+  drawKey(x, controlsY + 38, 'UP DOWN', 'Adjust edge cutoff')
   drawKey(x, controlsY + 76, 'S', 'Toggle stencil', stencilEnabled)
   drawKey(x, controlsY + 114, 'SPACE', paused and 'Resume motion' or 'Pause motion', paused)
   drawKey(x, controlsY + 152, 'R', 'Reset')
