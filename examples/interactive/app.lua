@@ -97,7 +97,7 @@ function App:keypressed(key)
   elseif self.experiment == 'vending' then
     if self.vending:keypressed(key) then self.paused = false end
   elseif self.experiment == 'map' then
-    self.map:keypressed(key)
+    if self.map:keypressed(key) then self.paused = false end
   else
     self.stencil:keypressed(key)
   end
@@ -114,16 +114,16 @@ end
 function App:mousepressed(x, y, button)
   if self.experiment == 'vending' and self.vending:mousepressed(x, y, button) then
     self.paused = false
-  elseif self.experiment == 'map' then
-    self.map:mousepressed(x, y, button)
+  elseif self.experiment == 'map' and self.map:mousepressed(x, y, button) then
+    self.paused = false
   end
 end
 
 function App:touchpressed(x, y)
   if self.experiment == 'vending' and self.vending:touchpressed(x, y) then
     self.paused = false
-  elseif self.experiment == 'map' then
-    self.map:touchpressed(x, y)
+  elseif self.experiment == 'map' and self.map:touchpressed(x, y) then
+    self.paused = false
   end
 end
 

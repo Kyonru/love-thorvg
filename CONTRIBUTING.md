@@ -117,6 +117,8 @@ island, then use the arrow keys and Enter to verify keyboard selection. Press
 `R` and confirm the Lottie path-drawing entrance replays before returning to the
 interactive SVG. Repeatedly select different regions and confirm each spring
 settles without shifting the base map or causing a ThorVG raster/upload spike.
+Pause the map with Space, then use an arrow and Enter; keyboard selection must
+resume and complete the spring rather than freezing its first frame.
 
 Example assets need an entry in that example's `assets/LICENSE.md`. Link the
 local file and its original source page, name the applicable license, and record
