@@ -193,4 +193,5 @@ updating a distributed platform artifact.
 - [x] external Lottie image and font resolution through `love.filesystem`
 - [x] optional bounded frame cache for scrub-heavy interfaces
 - [x] rasterization and upload benchmarks
-- investigation of OpenGL and WebGPU interop after the CPU API is stable
+- [x] investigation of OpenGL and WebGPU interop after the CPU API is stable;
+  see [docs/GPU_BACKENDS.md](docs/GPU_BACKENDS.md)
