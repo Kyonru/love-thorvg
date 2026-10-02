@@ -90,6 +90,20 @@ The native suite must continue to cover:
 - Lottie loading, duration, frame count, and rendering;
 - changing the render target size while reusing a document.
 
+## Performance benchmark
+
+Run the reproducible CPU-rasterization and texture-upload benchmark with:
+
+```sh
+./scripts/benchmark.sh
+```
+
+It renders the same Lottie animation at 128, 256, and 512 pixels and prints
+CSV rows containing average rasterization, upload, and combined frame times.
+The timers measure synchronous work inside `Document:render()`; GPU driver work
+deferred beyond `Image:replacePixels` is not included. Record the LÖVE version,
+OS, CPU/GPU, power state, and build type when comparing results.
+
 For Lua or packaging changes, also launch `examples/basic` and confirm that the
 native library is discovered without setting `LOVE_THORVG_LIBRARY`. Use the
 arrow keys to visit both the SVG and Lottie examples, and press `R` to verify
@@ -178,5 +192,5 @@ updating a distributed platform artifact.
 - [x] CI-built release artifacts for macOS ARM64/x64, Windows x64, and Linux x64
 - [x] external Lottie image and font resolution through `love.filesystem`
 - [x] optional bounded frame cache for scrub-heavy interfaces
-- rasterization and upload benchmarks
+- [x] rasterization and upload benchmarks
 - investigation of OpenGL and WebGPU interop after the CPU API is stable

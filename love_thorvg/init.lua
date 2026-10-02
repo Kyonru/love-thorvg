@@ -102,6 +102,11 @@ local function nativeError(buffer, fallback)
   return message ~= '' and message or fallback
 end
 
+local function clock()
+  if love.timer then return love.timer.getTime() end
+  return os.clock()
+end
+
 local function releaseFrameCache(self)
   if not self.frameCache then return end
   for _, entry in pairs(self.frameCache) do entry.image:release() end
@@ -277,6 +282,30 @@ function Document:getCacheStats()
   }
 end
 
+function Document:getRenderStats()
+  local frames = self.renderedFrames
+  return {
+    frames = frames,
+    lastRasterSeconds = self.lastRasterSeconds,
+    lastUploadSeconds = self.lastUploadSeconds,
+    totalRasterSeconds = self.totalRasterSeconds,
+    totalUploadSeconds = self.totalUploadSeconds,
+    averageRasterSeconds = frames > 0 and self.totalRasterSeconds / frames or 0,
+    averageUploadSeconds = frames > 0 and self.totalUploadSeconds / frames or 0,
+    lastCacheHit = self.lastCacheHit,
+  }
+end
+
+function Document:resetRenderStats()
+  self.renderedFrames = 0
+  self.lastRasterSeconds = 0
+  self.lastUploadSeconds = 0
+  self.totalRasterSeconds = 0
+  self.totalUploadSeconds = 0
+  self.lastCacheHit = false
+  return self
+end
+
 function Document:render()
   assert(self.handle ~= nil, 'document has been released')
   if not self.dirty then return false end
@@ -287,12 +316,16 @@ function Document:render()
       entry.used = self.cacheClock
       self.cacheHits = self.cacheHits + 1
       self.image = entry.image
+      self.lastRasterSeconds = 0
+      self.lastUploadSeconds = 0
+      self.lastCacheHit = true
       self.dirty = false
       return false
     end
     self.cacheMisses = self.cacheMisses + 1
   end
   local errorBuffer = ffi.new('char[512]')
+  local rasterStarted = clock()
   local result = native.love_thorvg_document_render(
     self.handle,
     ffi.cast('uint32_t*', imagePointer(self.imageData)),
@@ -302,13 +335,22 @@ function Document:render()
     self.progress,
     errorBuffer,
     512)
+  local rasterSeconds = clock() - rasterStarted
   if result ~= 0 then error(nativeError(errorBuffer, 'ThorVG render failed'), 2) end
+  local uploadStarted = clock()
   if self.frameCacheLimit > 0 then
     cacheFrame(self)
   else
     self.uploadImage:replacePixels(self.imageData)
     self.image = self.uploadImage
   end
+  local uploadSeconds = clock() - uploadStarted
+  self.renderedFrames = self.renderedFrames + 1
+  self.lastRasterSeconds = rasterSeconds
+  self.lastUploadSeconds = uploadSeconds
+  self.totalRasterSeconds = self.totalRasterSeconds + rasterSeconds
+  self.totalUploadSeconds = self.totalUploadSeconds + uploadSeconds
+  self.lastCacheHit = false
   self.dirty = false
   return true
 end
@@ -378,6 +420,12 @@ function M.new(path, options)
     cacheHits = 0,
     cacheMisses = 0,
     cacheEvictions = 0,
+    renderedFrames = 0,
+    lastRasterSeconds = 0,
+    lastUploadSeconds = 0,
+    totalRasterSeconds = 0,
+    totalUploadSeconds = 0,
+    lastCacheHit = false,
     progress = -1,
     time = 0,
     speed = options.speed or 1,

@@ -40,6 +40,10 @@ Public metadata fields are `duration`, `totalFrames`, `intrinsicWidth`, and
 - `clearCache()`: releases all cached frame textures while keeping the document usable.
 - `getCacheStats()`: returns `enabled`, `size`, `limit`, `hits`, `misses`, and
   `evictions`.
+- `getRenderStats()`: returns render counts plus the last, total, and average
+  rasterization and upload times in seconds. `lastCacheHit` identifies a cache
+  lookup that skipped both stages.
+- `resetRenderStats()`: resets the render timing counters.
 - `draw(x, y, rotation, sx, sy, ox, oy)`: renders if needed, then draws the texture.
 - `getImage()`: renders if needed and returns the reusable LÖVE `Image`.
 - `release()`: immediately releases native and LÖVE resources; it is idempotent.
