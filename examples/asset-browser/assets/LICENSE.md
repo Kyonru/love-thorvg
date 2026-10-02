@@ -10,21 +10,17 @@ licensed separately under the repository's [MIT license](../../../LICENSE).
 
 ## LottieFiles downloads
 
-The original macOS download metadata for the following files identifies
-[`app.lottiefiles.com`](https://app.lottiefiles.com/) as the source. It does not
-retain the public animation page, creator name, or animation-specific license.
-LottieFiles publishes its standard terms on the
+These files were downloaded from the linked LottieFiles free-animation pages.
+Their use and redistribution are governed by the
 [Lottie Simple License page](https://lottiefiles.com/page/license).
 
-- [`relax.json`](relax.json) — downloaded as `Relax.json`.
-- [`audio-cassete.json`](audio-cassete.json) — downloaded as
-  `audio cassete.json`.
-- [`turkey.json`](turkey.json) — downloaded as
-  `Colorful Thanksgiving Turkey.json`.
-- [`vending-machine.json`](vending-machine.json) — downloaded as
-  `Vending machine.json`.
-- [`world-cup.json`](world-cup.json) — downloaded as
-  `Worldcup 2026 Football Animation.json`.
-
-The missing per-animation source pages and authors should be recovered before
-these assets are included in a release or redistributed outside this example.
+- [`relax.json`](relax.json) —
+  [Relax](https://lottiefiles.com/free-animation/relax-klsT06u6VH).
+- [`audio-cassete.json`](audio-cassete.json) —
+  [Audio Cassete](https://lottiefiles.com/free-animation/audio-cassete-36jT2Iy1lW).
+- [`turkey.json`](turkey.json) —
+  [Colorful Thanksgiving Turkey](https://lottiefiles.com/free-animation/colorful-thanksgiving-turkey-9dPLYiJwAy).
+- [`vending-machine.json`](vending-machine.json) —
+  [Vending Machine](https://lottiefiles.com/free-animation/vending-machine-WMsWdS9GHa).
+- [`world-cup.json`](world-cup.json) —
+  [Worldcup 2026 Football Animation](https://lottiefiles.com/free-animation/worldcup-2026-football-animation-Q7L9uyN0IG).

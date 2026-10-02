@@ -8,8 +8,7 @@ under the repository's [MIT license](../../../LICENSE).
 - [`vending-machine.json`](vending-machine.json) — exact copy of the basic
   asset browser's
   [`vending-machine.json`](../../asset-browser/assets/vending-machine.json).
-  Its macOS download metadata identifies
-  [`app.lottiefiles.com`](https://app.lottiefiles.com/) as the origin, but the
-  public animation page and creator were not retained. See the
-  [Lottie Simple License](https://lottiefiles.com/page/license) and recover the
-  animation-specific source page before redistribution.
+  Source:
+  [Vending Machine](https://lottiefiles.com/free-animation/vending-machine-WMsWdS9GHa).
+  Its use and redistribution are governed by the
+  [Lottie Simple License](https://lottiefiles.com/page/license).
