@@ -44,6 +44,8 @@ local performance = {
 }
 
 local VENDING_FPS = 60
+local VENDING_RENDER_FPS = 30
+local VENDING_RENDER_MAX_WIDTH = 480
 local VENDING_WIDTH = 1080
 local VENDING_HEIGHT = 810
 local HOVER_STARTS = {15, 75, 135, 195, 255, 315, 375, 435, 495}
@@ -78,7 +80,10 @@ local function layout()
   vendingRect.y = stage.y + math.floor((stage.size - vendingRect.height) * 0.5)
 
   if mask then mask:resize(stage.size, stage.size) end
-  if vending then vending:resize(vendingRect.width, vendingRect.height) end
+  if vending then
+    local renderWidth = math.min(vendingRect.width, VENDING_RENDER_MAX_WIDTH)
+    vending:resize(renderWidth, math.floor(renderWidth * VENDING_HEIGHT / VENDING_WIDTH + 0.5))
+  end
 end
 
 local function drawMask()
@@ -148,8 +153,10 @@ end
 
 local function drawVendingStage()
   love.graphics.setColor(1, 1, 1, 1)
-  vending:setProgress(vendingFrame / math.max(1, vending.totalFrames - 1))
-  vending:draw(vendingRect.x, vendingRect.y)
+  local frame = math.floor(vendingFrame + 0.5)
+  vending:setProgress(frame / math.max(1, vending.totalFrames - 1))
+  vending:draw(vendingRect.x, vendingRect.y, 0,
+    vendingRect.width / vending.width, vendingRect.height / vending.height)
 
   setColor(colors.ink, 0.12)
   love.graphics.setLineWidth(1)
@@ -258,9 +265,9 @@ local function drawVendingRail(x, y, width, compact)
   love.graphics.print(('%d FPS · %d DRAWS · %.1f MB GPU · %.1f MB LUA'):format(
     performance.fps, performance.drawCalls, performance.textureMiB, performance.luaMiB),
     x, statusY + 91)
-  love.graphics.print(('RASTER %.1f MS · UPLOAD %.1f MS'):format(
-    renderStats.lastRasterSeconds * 1000, renderStats.lastUploadSeconds * 1000),
-    x, statusY + 113)
+  love.graphics.print(('RASTER %.1f MS · UPLOAD %.1f MS · %dx%d'):format(
+    renderStats.lastRasterSeconds * 1000, renderStats.lastUploadSeconds * 1000,
+    vending.width, vending.height), x, statusY + 113)
   love.graphics.print(('CACHE %d/%d · %d HITS · %d MISSES'):format(
     cacheStats.size, cacheStats.limit, cacheStats.hits, cacheStats.misses),
     x, statusY + 135)
@@ -396,10 +403,10 @@ function love.update(dt)
   else
     if paused or vendingState == 'idle' then return end
     vendingAccumulator = vendingAccumulator + dt
-    if vendingAccumulator < 1 / 30 then return end
-    local step = vendingAccumulator
-    vendingAccumulator = 0
-    vendingFrame = vendingFrame + step * VENDING_FPS
+    if vendingAccumulator < 1 / VENDING_RENDER_FPS then return end
+    local steps = math.floor(vendingAccumulator * VENDING_RENDER_FPS)
+    vendingAccumulator = vendingAccumulator - steps / VENDING_RENDER_FPS
+    vendingFrame = vendingFrame + steps * VENDING_FPS / VENDING_RENDER_FPS
 
     if vendingState == 'hovering' then
       local startFrame = HOVER_STARTS[hoveredItem]
