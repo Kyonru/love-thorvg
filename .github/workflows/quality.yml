@@ -1,0 +1,21 @@
+name: quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  native:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-14, ubuntu-24.04, windows-2025]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install meson ninja
+      - run: meson setup build --wrap-mode=forcefallback
+      - run: meson compile -C build
+      - run: meson test -C build --print-errorlogs

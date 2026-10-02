@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://github.com/thorvg/thorvg.git
+revision = fffc3f1af3b9854c8de647ac3b4d4c41fc21b62c
+depth = 1
+
+[provide]
+thorvg-1 = thorvg_dep

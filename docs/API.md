@@ -1,0 +1,42 @@
+# API
+
+## `thorvg.new(path, options)`
+
+Loads an SVG or Lottie asset through `love.filesystem` and returns a `Document`.
+
+Options:
+
+- `width`, `height`: raster target size; defaults to the asset's intrinsic size.
+- `autoplay`: start playback immediately; defaults to `true`.
+- `loop`: wrap playback; defaults to `true`.
+- `speed`: playback multiplier; defaults to `1`.
+- `progress`: initial normalized progress; defaults to `0`.
+- `filter`: LÖVE texture filter (`linear` or `nearest`); defaults to `linear`.
+- `threads`: ThorVG worker count. The first engine initialization fixes this
+  value for the process; `0` lets rendering remain on the caller thread.
+- `mimeType`: override format detection.
+- `resourcePath`: native resource directory for external file references.
+
+Public metadata fields are `duration`, `totalFrames`, `intrinsicWidth`, and
+`intrinsicHeight`.
+
+## Document methods
+
+- `update(dt)`: advances playback and marks a changed frame dirty.
+- `play()` / `pause()`: controls automatic playback.
+- `setProgress(value)`: selects normalized animation progress.
+- `seek(seconds)`: selects animation time.
+- `resize(width, height)`: recreates the reusable target only when dimensions change.
+- `render()`: rasterizes and uploads only when dirty; returns whether work occurred.
+- `draw(x, y, rotation, sx, sy, ox, oy)`: renders if needed, then draws the texture.
+- `getImage()`: renders if needed and returns the reusable LÖVE `Image`.
+- `release()`: immediately releases native and LÖVE resources; it is idempotent.
+
+`Document` also has a finalizer, but explicit `release()` is recommended.
+
+## Pixel contract
+
+The C ABI renders straight-alpha RGBA8 bytes directly into the `ImageData`
+allocation. `Image:replacePixels` performs the CPU-to-GPU upload. The native API
+is declared in `include/love_thorvg.h`; `love_thorvg_abi_version()` currently
+returns `1`.

@@ -1,0 +1,7 @@
+/build/
+/.venv/
+/subprojects/packagecache/
+/subprojects/thorvg/
+/subprojects/.wraplock
+*.dSYM/
+.DS_Store
