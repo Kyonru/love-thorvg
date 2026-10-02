@@ -69,15 +69,76 @@ function ui.drawVending(theme, fonts, vending, performance, rail, paused, compac
     vending.state == 'selecting')
   drawKey(theme, fonts, x, controlsY + 114, 'SPACE',
     paused and 'Resume motion' or 'Pause motion', paused)
-  drawKey(theme, fonts, x, controlsY + 152, 'TAB', 'Stencil experiment')
+  drawKey(theme, fonts, x, controlsY + 152, 'TAB', 'Interactive map')
   drawKey(theme, fonts, x, controlsY + 190, 'R', 'Reset')
+end
+
+function ui.drawMap(theme, fonts, map, performance, rail, compact)
+  local x, y, width = rail.x, rail.y, rail.width
+  local active = map:activeRegion()
+  local selected = map:selectedRegion()
+
+  theme.setColor(theme.cyan)
+  love.graphics.setFont(fonts.label)
+  love.graphics.print('SVG / HIT TEST 02', x, y)
+
+  theme.setColor(theme.ink)
+  love.graphics.setFont(fonts.compactTitle)
+  love.graphics.printf(compact and 'Explore the Dominican Republic' or
+    'Explore the\nDominican Republic', x, y + 30, width, 'left')
+
+  if compact then
+    theme.setColor(theme.cyan)
+    love.graphics.setFont(fonts.label)
+    love.graphics.printf(active.name .. ' · ' .. active.iso, x, y + 66, width, 'right')
+    theme.setColor(theme.muted)
+    love.graphics.setFont(fonts.body)
+    love.graphics.printf('Hover and click · Arrows browse · Enter selects · Tab switches · R resets',
+      x, y + 94, width, 'left')
+    return
+  end
+
+  theme.setColor(theme.muted)
+  love.graphics.setFont(fonts.body)
+  love.graphics.printf(
+    'One SVG draws the map. A hidden color-coded render provides pixel-accurate province hit testing, including detached islands.',
+    x, y + 112, width, 'left')
+
+  local statusY = y + 212
+  theme.setColor(theme.line)
+  love.graphics.line(x, statusY, x + width, statusY)
+  theme.setColor(theme.cyan)
+  love.graphics.setFont(fonts.label)
+  love.graphics.print(active.name:upper(), x, statusY + 18)
+  theme.setColor(theme.muted)
+  love.graphics.print(('REGION  %02d / %02d · %s'):format(
+    map:activeIndex(), #map.regions, active.iso), x, statusY + 43)
+  love.graphics.print(('TYPE  %s · POSTAL  %s'):format(active.kind:upper(), active.postal),
+    x, statusY + 65)
+  love.graphics.print(selected and ('SELECTED  ' .. selected.name) or 'SELECTED  —',
+    x, statusY + 87)
+  love.graphics.print(('%d FPS · %d DRAWS · %.1f MB GPU · %.1f MB LUA'):format(
+    performance.fps, performance.drawCalls, performance.textureMiB, performance.luaMiB),
+    x, statusY + 113)
+  love.graphics.print(('%d TARGETS · %d SVG PATHS · HIT MAP %dx%d'):format(
+    #map.regions, map.pathCount, map.hitMap.width, map.hitMap.height), x, statusY + 135)
+
+  local controlsY = statusY + 176
+  drawKey(theme, fonts, x, controlsY, 'MOUSE', 'Hover a province')
+  drawKey(theme, fonts, x, controlsY + 38, 'CLICK', 'Select province',
+    map.inputMode == 'mouse' and map.selectedIndex ~= nil)
+  drawKey(theme, fonts, x, controlsY + 76, 'ARROWS', 'Browse alphabetically',
+    map.inputMode == 'keyboard')
+  drawKey(theme, fonts, x, controlsY + 114, 'ENTER', 'Select focused province')
+  drawKey(theme, fonts, x, controlsY + 152, 'TAB', 'SVG stencil')
+  drawKey(theme, fonts, x, controlsY + 190, 'R', 'Reset selection')
 end
 
 function ui.drawStencil(theme, fonts, stencil, rail, paused, compact)
   local x, y, width = rail.x, rail.y, rail.width
   theme.setColor(theme.cyan)
   love.graphics.setFont(fonts.label)
-  love.graphics.print('SVG / STENCIL 01', x, y)
+  love.graphics.print('SVG / STENCIL 03', x, y)
 
   theme.setColor(theme.ink)
   love.graphics.setFont(compact and fonts.compactTitle or fonts.title)

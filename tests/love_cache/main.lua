@@ -35,6 +35,16 @@ function love.load()
   expect(document:render(), 'document should remain usable after clearing and resizing')
   document:release()
 
+  local pixelsDocument = thorvg.new('assets/animated.json', {
+    width = 48,
+    height = 48,
+    autoplay = false,
+  })
+  local pixels = pixelsDocument:getImageData()
+  expect(pixels:getWidth() == 48 and pixels:getHeight() == 48,
+    'getImageData should expose the current reusable raster target')
+  pixelsDocument:release()
+
   print('love-thorvg frame cache smoke test passed')
   love.event.quit(0)
 end

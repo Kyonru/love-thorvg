@@ -9,22 +9,7 @@ Run it from this directory:
 /Applications/love.app/Contents/MacOS/love .
 ```
 
-## 01 · SVG stencil
-
-The alpha channel of a ThorVG-rendered SVG populates LÖVE's stencil buffer.
-The animated field is made from ordinary `love.graphics` calls and is only
-visible where the SVG is opaque.
-
-- Left/right: rotate the SVG mask.
-- Up/down: adjust the alpha cutoff used by the stencil shader.
-- `S`: enable or disable SVG clipping.
-- Space: pause or resume the content animation.
-
-The stencil is binary, so the shader discards pixels below the selected alpha
-cutoff. A future exploration can compare this with a Canvas-based alpha mask,
-which preserves partially transparent antialiased edges.
-
-## 02 · Interactive vending machine
+## 01 · Interactive vending machine
 
 The vending-machine Lottie contains nine authored hover segments and nine
 selection segments. LÖVE performs hit-testing over the 3×3 product grid and
@@ -44,6 +29,34 @@ and frame-cache activity.
 - Arrow keys: move keyboard focus through the product grid.
 - Enter: select the focused product.
 - Space: pause or resume motion.
+
+## 02 · Interactive SVG map
+
+The Dominican Republic SVG is rendered normally for display. A second,
+color-coded derivative is rendered once and sampled on the CPU for pixel-precise
+province hit testing. A small shader uses the same hit-map texture to highlight
+hovered and selected regions, so interaction does not rerasterize the SVG or
+require duplicate polygon geometry in Lua. Detached island paths share their
+province's encoded color and behave as one target.
+
+- Mouse: hover a province; click to select it.
+- Arrow keys: browse provinces alphabetically.
+- Enter: select the focused province.
+
+## 03 · SVG stencil
+
+The alpha channel of a ThorVG-rendered SVG populates LÖVE's stencil buffer.
+The animated field is made from ordinary `love.graphics` calls and is only
+visible where the SVG is opaque.
+
+- Left/right: rotate the SVG mask.
+- Up/down: adjust the alpha cutoff used by the stencil shader.
+- `S`: enable or disable SVG clipping.
+- Space: pause or resume the content animation.
+
+The stencil is binary, so the shader discards pixels below the selected alpha
+cutoff. A future exploration can compare this with a Canvas-based alpha mask,
+which preserves partially transparent antialiased edges.
 
 Shared controls:
 

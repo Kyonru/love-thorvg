@@ -1,4 +1,5 @@
 local thorvg = require('love_thorvg')
+local Map = require('experiments.map')
 local Stencil = require('experiments.stencil')
 local Vending = require('experiments.vending')
 local theme = require('theme')
@@ -20,6 +21,7 @@ function App.new()
     fonts = fonts,
     stage = {x = 0, y = 0, size = 1},
     rail = {x = 0, y = 0, width = 1},
+    map = Map.new(thorvg),
     stencil = Stencil.new(thorvg),
     vending = Vending.new(thorvg),
     experiment = 'vending',
@@ -52,13 +54,14 @@ function App:resize()
   end
   self.stencil:resize(stage)
   self.vending:resize(stage)
+  self.map:resize(stage)
 end
 
 function App:update(dt)
   if not self.paused then self.elapsed = self.elapsed + dt end
   if self.experiment == 'vending' then
     self.vending:update(dt, self.paused)
-  else
+  elseif self.experiment == 'stencil' then
     self.stencil:update(dt, self.paused)
   end
 end
@@ -69,12 +72,20 @@ function App:keypressed(key)
   elseif key == 'r' then
     self.elapsed = 0
     self.paused = false
-    if self.experiment == 'vending' then self.vending:reset() else self.stencil:reset() end
+    if self.experiment == 'vending' then
+      self.vending:reset()
+    elseif self.experiment == 'map' then
+      self.map:reset()
+    else
+      self.stencil:reset()
+    end
   elseif key == 'tab' then
     self.paused = false
     if self.experiment == 'vending' then
-      self.experiment = 'stencil'
+      self.experiment = 'map'
       self.vending:deactivate()
+    elseif self.experiment == 'map' then
+      self.experiment = 'stencil'
     else
       self.experiment = 'vending'
       self.vending:setHoveredItem(self.vending:itemAt(love.mouse.getPosition()), 'mouse')
@@ -83,24 +94,34 @@ function App:keypressed(key)
     love.event.quit()
   elseif self.experiment == 'vending' then
     if self.vending:keypressed(key) then self.paused = false end
+  elseif self.experiment == 'map' then
+    self.map:keypressed(key)
   else
     self.stencil:keypressed(key)
   end
 end
 
 function App:mousemoved(x, y)
-  if self.experiment == 'vending' then self.vending:mousemoved(x, y) end
+  if self.experiment == 'vending' then
+    self.vending:mousemoved(x, y)
+  elseif self.experiment == 'map' then
+    self.map:mousemoved(x, y)
+  end
 end
 
 function App:mousepressed(x, y, button)
   if self.experiment == 'vending' and self.vending:mousepressed(x, y, button) then
     self.paused = false
+  elseif self.experiment == 'map' then
+    self.map:mousepressed(x, y, button)
   end
 end
 
 function App:touchpressed(x, y)
   if self.experiment == 'vending' and self.vending:touchpressed(x, y) then
     self.paused = false
+  elseif self.experiment == 'map' then
+    self.map:touchpressed(x, y)
   end
 end
 
@@ -110,6 +131,9 @@ function App:draw()
     self.vending:draw(theme)
     ui.drawVending(theme, self.fonts, self.vending, self.performance,
       self.rail, self.paused, compact)
+  elseif self.experiment == 'map' then
+    self.map:draw(self.stage, theme)
+    ui.drawMap(theme, self.fonts, self.map, self.performance, self.rail, compact)
   else
     self.stencil:draw(self.stage, self.elapsed, self.fonts, theme)
     ui.drawStencil(theme, self.fonts, self.stencil, self.rail, self.paused, compact)
@@ -123,6 +147,7 @@ function App:draw()
 end
 
 function App:release()
+  self.map:release()
   self.stencil:release()
   self.vending:release()
   for _, font in pairs(self.fonts) do font:release() end

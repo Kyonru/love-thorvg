@@ -46,6 +46,10 @@ Public metadata fields are `duration`, `totalFrames`, `intrinsicWidth`, and
 - `resetRenderStats()`: resets the render timing counters.
 - `draw(x, y, rotation, sx, sy, ox, oy)`: renders if needed, then draws the texture.
 - `getImage()`: renders if needed and returns the reusable LÖVE `Image`.
+- `getImageData()`: renders if needed and returns the reusable CPU-side LÖVE
+  `ImageData`. This is useful for color picking and other occasional pixel
+  queries. It requires `frameCache = 0`; retain neither it nor its pointer after
+  releasing the document.
 - `release()`: immediately releases native and LÖVE resources; it is idempotent.
 
 `Document` also has a finalizer, but explicit `release()` is recommended.

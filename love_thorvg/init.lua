@@ -366,6 +366,13 @@ function Document:getImage()
   return self.image
 end
 
+function Document:getImageData()
+  assert(self.frameCacheLimit == 0,
+    'getImageData is unavailable when frameCache is enabled')
+  self:render()
+  return self.imageData
+end
+
 function Document:release()
   if not self.handle then return end
   local handle = self.handle
