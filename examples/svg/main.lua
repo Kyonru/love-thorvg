@@ -16,8 +16,7 @@ local colors = {
 }
 
 local mask
-local morph
-local rasterSnapshot
+local coffee
 local stencilShader
 local fonts = {}
 local stage = {x = 0, y = 0, size = 1}
@@ -28,10 +27,9 @@ local elapsed = 0
 local paused = false
 local stencilEnabled = true
 local experiment = 1
-local morphProgress = 0
-local morphManual = false
-local morphSize = 1
-local assetStats = {vectorKB = 0, pngKB = 0, spriteMiB = 0}
+local coffeeProgress = 0
+local coffeeManual = false
+local assetStats = {vectorKB = 0, spriteMiB = 0}
 
 local function setColor(color, alpha)
   love.graphics.setColor(color[1], color[2], color[3], alpha or color[4] or 1)
@@ -56,8 +54,7 @@ local function layout()
   end
 
   if mask then mask:resize(stage.size, stage.size) end
-  morphSize = math.max(96, math.floor(stage.size * (love.graphics.getWidth() < 820 and 0.42 or 0.46)))
-  if morph then morph:resize(morphSize, morphSize) end
+  if coffee then coffee:resize(stage.size, stage.size) end
 end
 
 local function drawMask()
@@ -125,61 +122,15 @@ local function drawStage()
   love.graphics.rectangle('line', stage.x, stage.y, stage.size, stage.size, 24, 24)
 end
 
-local function drawCheckerboard(x, y, size)
-  local cell = math.max(12, math.floor(size / 8))
-  love.graphics.setScissor(x, y, size, size)
-  for row = 0, math.ceil(size / cell) do
-    for column = 0, math.ceil(size / cell) do
-      setColor((row + column) % 2 == 0 and colors.panelRaised or colors.panel, 0.72)
-      love.graphics.rectangle('fill', x + column * cell, y + row * cell, cell, cell)
-    end
-  end
-  love.graphics.setScissor()
-end
-
-local function drawComparisonLabel(text, x, y, width, active)
-  setColor(active and colors.cyan or colors.coral)
-  love.graphics.setFont(fonts.label)
-  love.graphics.printf(text, x, y, width, 'center')
-end
-
-local function drawMorphStage()
+local function drawCoffeeStage()
   local x, y, size = stage.x, stage.y, stage.size
-  setColor(colors.panel)
-  love.graphics.rectangle('fill', x - 1, y - 1, size + 2, size + 2, 24, 24)
-
-  local gutter = math.max(14, math.floor(size * 0.035))
-  local paneWidth = (size - gutter * 3) * 0.5
-  local visualSize = math.min(morphSize, paneWidth - 8)
-  local visualY = y + math.max(54, size * 0.18)
-  local leftX = x + gutter + (paneWidth - visualSize) * 0.5
-  local rightPaneX = x + gutter * 2 + paneWidth
-  local rightX = rightPaneX + (paneWidth - visualSize) * 0.5
-
-  drawComparisonLabel('LAYERED VECTOR · LIVE', x + gutter, y + 24, paneWidth, true)
-  drawComparisonLabel('PNG · ONE FRAME', rightPaneX, y + 24, paneWidth, false)
-  drawCheckerboard(leftX, visualY, visualSize)
-  drawCheckerboard(rightX, visualY, visualSize)
-
   love.graphics.setColor(1, 1, 1, 1)
-  morph:setProgress(morphProgress)
-  morph:draw(leftX + visualSize * 0.5, visualY + visualSize * 0.5, 0,
-    visualSize / morphSize, visualSize / morphSize, morphSize * 0.5, morphSize * 0.5)
+  coffee:setProgress(coffeeProgress)
+  coffee:draw(x, y)
 
-  love.graphics.setColor(1, 1, 1, 1)
-  local rasterWidth, rasterHeight = rasterSnapshot:getDimensions()
-  love.graphics.draw(rasterSnapshot, rightX + visualSize * 0.5, visualY + visualSize * 0.5,
-    0, visualSize / rasterWidth, visualSize / rasterHeight, rasterWidth * 0.5, rasterHeight * 0.5)
-
-  local captionY = visualY + visualSize + math.max(20, size * 0.055)
-  setColor(colors.ink)
-  love.graphics.setFont(fonts.body)
-  love.graphics.printf('Bézier morph\n+ trim + tracks', x + gutter, captionY, paneWidth, 'center')
-  love.graphics.printf('Fixed pixels\n+ one state', rightPaneX, captionY, paneWidth, 'center')
-
-  setColor(colors.line)
-  love.graphics.line(x + size * 0.5, y + 20, x + size * 0.5, y + size - 20)
-  love.graphics.rectangle('line', x, y, size, size, 24, 24)
+  setColor(colors.ink, 0.12)
+  love.graphics.setLineWidth(1)
+  love.graphics.rectangle('line', x, y, size, size, 18, 18)
 end
 
 local function drawKey(x, y, key, label, active)
@@ -194,20 +145,20 @@ local function drawKey(x, y, key, label, active)
   love.graphics.print(label, x + keyWidth + 12, y + 5)
 end
 
-local function drawMorphRail(x, y, width, compact)
+local function drawCoffeeRail(x, y, width, compact)
   setColor(colors.cyan)
   love.graphics.setFont(fonts.label)
-  love.graphics.print('VECTOR / RASTER 02', x, y)
+  love.graphics.print('COFFEE MATCH CUT', x, y)
 
   setColor(colors.ink)
   love.graphics.setFont(compact and fonts.compactTitle or fonts.title)
-  love.graphics.printf(compact and 'One asset, coordinated motion' or 'One asset,\ncoordinated motion',
+  love.graphics.printf(compact and 'One cup. Three moods.' or 'One cup.\nThree moods.',
     x, y + 30, width, 'left')
 
   if compact then
     setColor(colors.muted)
     love.graphics.setFont(fonts.body)
-    love.graphics.printf('LEFT/RIGHT scrub    SPACE pause    TAB switch    R reset',
+    love.graphics.printf('LEFT/RIGHT scrub    SPACE pause    TAB stencil    R reset',
       x, y + 72, width, 'left')
     return
   end
@@ -215,7 +166,7 @@ local function drawMorphRail(x, y, width, compact)
   setColor(colors.muted)
   love.graphics.setFont(fonts.body)
   love.graphics.printf(
-    'For one polygon, use flux. ThorVG earns its place when a designer ships Bézier paths, trim animation, and layered tracks as one timeline.',
+    'The cup holds the visual beat while its silhouette, packaging pattern, steam, lid, and palette match-cut between roasts.',
     x, y + 178, width, 'left')
 
   local statusY = y + 270
@@ -223,16 +174,15 @@ local function drawMorphRail(x, y, width, compact)
   love.graphics.line(x, statusY, x + width, statusY)
   setColor(colors.cyan)
   love.graphics.setFont(fonts.label)
-  love.graphics.print(('MORPH  %03d%%'):format(math.floor(morphProgress * 100 + 0.5)), x, statusY + 18)
+  love.graphics.print(('LOOP  %03d%%'):format(math.floor(coffeeProgress * 100 + 0.5)), x, statusY + 18)
   setColor(colors.muted)
-  love.graphics.print(('VECTOR  %.1f KB'):format(assetStats.vectorKB), x, statusY + 43)
-  love.graphics.print(('PNG SNAPSHOT  %.1f KB'):format(assetStats.pngKB), x, statusY + 65)
-  love.graphics.printf(('3 layers · curved path · trim track. %d PNG frames at 256 px are about %.0f MiB decoded.'):format(
-    morph.totalFrames, assetStats.spriteMiB), x, statusY + 91, width, 'left')
+  love.graphics.print(('ONE VECTOR TIMELINE  %.1f KB'):format(assetStats.vectorKB), x, statusY + 43)
+  love.graphics.printf(('%d coordinated frames. The same 500 px PNG sequence is about %.0f MiB decoded.'):format(
+    coffee.totalFrames, assetStats.spriteMiB), x, statusY + 69, width, 'left')
 
-  local controlsY = statusY + 148
-  drawKey(x, controlsY, 'LEFT RIGHT', 'Scrub morph')
-  drawKey(x, controlsY + 38, 'SPACE', paused and 'Resume morph' or 'Pause morph', paused)
+  local controlsY = statusY + 134
+  drawKey(x, controlsY, 'LEFT RIGHT', 'Scrub timeline')
+  drawKey(x, controlsY + 38, 'SPACE', paused and 'Resume loop' or 'Pause loop', paused)
   drawKey(x, controlsY + 76, 'TAB', 'Stencil experiment')
   drawKey(x, controlsY + 114, 'R', 'Reset')
 end
@@ -241,7 +191,7 @@ local function drawRail()
   local x, y, width = rail.x, rail.y, rail.width
   local compact = love.graphics.getWidth() < 820
   if experiment == 2 then
-    drawMorphRail(x, y, width, compact)
+    drawCoffeeRail(x, y, width, compact)
     return
   end
   setColor(colors.cyan)
@@ -287,7 +237,7 @@ local function drawRail()
   drawKey(x, controlsY + 76, 'S', 'Toggle stencil', stencilEnabled)
   drawKey(x, controlsY + 114, 'SPACE', paused and 'Resume motion' or 'Pause motion', paused)
   drawKey(x, controlsY + 152, 'R', 'Reset')
-  drawKey(x, controlsY + 190, 'TAB', 'Morph experiment')
+  drawKey(x, controlsY + 190, 'TAB', 'Coffee match cut')
 end
 
 local function reset()
@@ -296,8 +246,8 @@ local function reset()
   elapsed = 0
   paused = false
   stencilEnabled = true
-  morphProgress = 0
-  morphManual = false
+  coffeeProgress = 0
+  coffeeManual = false
 end
 
 function love.load()
@@ -326,19 +276,15 @@ function love.load()
     autoplay = false,
     filter = 'linear',
   })
-  morph = thorvg.new('assets/morph.json', {
-    width = 256,
-    height = 256,
+  coffee = thorvg.new('assets/coffee-match.json', {
+    width = 500,
+    height = 500,
     autoplay = false,
     filter = 'linear',
   })
-  rasterSnapshot = love.graphics.newImage('assets/morph-start.png')
-  rasterSnapshot:setFilter('linear', 'linear')
-  local vectorInfo = love.filesystem.getInfo('assets/morph.json')
-  local pngInfo = love.filesystem.getInfo('assets/morph-start.png')
+  local vectorInfo = love.filesystem.getInfo('assets/coffee-match.json')
   assetStats.vectorKB = vectorInfo.size / 1024
-  assetStats.pngKB = pngInfo.size / 1024
-  assetStats.spriteMiB = 256 * 256 * 4 * morph.totalFrames / (1024 * 1024)
+  assetStats.spriteMiB = 500 * 500 * 4 * coffee.totalFrames / (1024 * 1024)
   layout()
 end
 
@@ -359,10 +305,10 @@ function love.update(dt)
       (love.keyboard.isDown('left') and 1 or 0)
     if scrubDirection ~= 0 then
       paused = true
-      morphManual = true
-      morphProgress = math.max(0, math.min(1, morphProgress + scrubDirection * dt * 0.45))
-    elseif not paused and not morphManual then
-      morphProgress = 0.5 - 0.5 * math.cos(elapsed * 1.25)
+      coffeeManual = true
+      coffeeProgress = math.max(0, math.min(1, coffeeProgress + scrubDirection * dt * 0.35))
+    elseif not paused and not coffeeManual then
+      coffeeProgress = (elapsed / coffee.duration) % 1
     end
   end
 end
@@ -372,25 +318,24 @@ function love.keypressed(key)
     stencilEnabled = not stencilEnabled
   elseif key == 'space' then
     paused = not paused
-    if not paused then morphManual = false end
+    if not paused then coffeeManual = false end
   elseif key == 'r' then
     reset()
   elseif key == 'tab' then
     experiment = experiment == 1 and 2 or 1
     paused = false
-    morphManual = false
+    coffeeManual = false
   elseif key == 'escape' then
     love.event.quit()
   end
 end
 
 function love.draw()
-  if experiment == 1 then drawStage() else drawMorphStage() end
+  if experiment == 1 then drawStage() else drawCoffeeStage() end
   drawRail()
 end
 
 function love.quit()
   if mask then mask:release() end
-  if morph then morph:release() end
-  if rasterSnapshot then rasterSnapshot:release() end
+  if coffee then coffee:release() end
 end

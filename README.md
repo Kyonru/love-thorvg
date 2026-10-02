@@ -41,10 +41,10 @@ cd examples/svg
 /Applications/love.app/Contents/MacOS/love .
 ```
 
-This playground compares vector rendering with fixed PNG artwork. It includes
-an SVG-driven stencil and a layered Bézier timeline beside an exact PNG
-snapshot. Press `Tab` to switch experiments; the on-screen controls explain
-each one.
+This playground includes an SVG-driven stencil and an original coffee packaging
+match cut where silhouette, pattern, palette, lid, and steam animate as one
+designer-authored timeline. Press `Tab` to switch experiments; the on-screen
+controls explain each one.
 
 ## Install
 
