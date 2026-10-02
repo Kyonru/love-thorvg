@@ -176,7 +176,7 @@ updating a distributed platform artifact.
 ## Roadmap
 
 - [x] CI-built release artifacts for macOS ARM64/x64, Windows x64, and Linux x64
-- external Lottie image and font resolution through `love.filesystem`
+- [x] external Lottie image and font resolution through `love.filesystem`
 - optional bounded frame cache for scrub-heavy interfaces
 - rasterization and upload benchmarks
 - investigation of OpenGL and WebGPU interop after the CPU API is stable

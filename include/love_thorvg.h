@@ -20,6 +20,18 @@ extern "C" {
 
 typedef struct love_thorvg_document love_thorvg_document;
 
+enum love_thorvg_asset_type {
+    LOVE_THORVG_ASSET_PICTURE = 1,
+    LOVE_THORVG_ASSET_FONT = 2
+};
+
+typedef size_t (*love_thorvg_asset_resolver)(
+    const char* source,
+    int asset_type,
+    void* buffer,
+    size_t capacity,
+    void* user_data);
+
 enum love_thorvg_result {
     LOVE_THORVG_OK = 0,
     LOVE_THORVG_INVALID_ARGUMENT = 1,
@@ -38,6 +50,18 @@ LOVE_THORVG_API int love_thorvg_document_create(
     const char* mime_type,
     const char* resource_path,
     unsigned threads,
+    love_thorvg_document** out_document,
+    char* error,
+    size_t error_capacity);
+
+LOVE_THORVG_API int love_thorvg_document_create_with_resolver(
+    const void* data,
+    size_t size,
+    const char* mime_type,
+    const char* resource_path,
+    unsigned threads,
+    love_thorvg_asset_resolver resolver,
+    void* resolver_user_data,
     love_thorvg_document** out_document,
     char* error,
     size_t error_capacity);

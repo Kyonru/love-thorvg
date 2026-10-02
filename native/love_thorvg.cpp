@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <cstring>
 #include <new>
+#include <string>
+#include <vector>
 
 struct love_thorvg_document {
     Tvg_Canvas canvas = nullptr;
@@ -20,6 +22,10 @@ struct love_thorvg_document {
     uint32_t target_height = 0;
     bool added = false;
     bool engine_initialized = false;
+    love_thorvg_asset_resolver resolver = nullptr;
+    void* resolver_user_data = nullptr;
+    std::string asset_error;
+    std::vector<std::string> loaded_fonts;
 };
 
 namespace {
@@ -39,6 +45,72 @@ bool frame_result_ok(Tvg_Result result)
 {
     return result == TVG_RESULT_SUCCESS || result == TVG_RESULT_INSUFFICIENT_CONDITION ||
            result == TVG_RESULT_NOT_SUPPORTED;
+}
+
+const char* sniff_mime(const std::vector<uint8_t>& bytes, const char* source, int asset_type)
+{
+    if (bytes.size() >= 8 && std::memcmp(bytes.data(), "\x89PNG\r\n\x1a\n", 8) == 0) return "png";
+    if (bytes.size() >= 3 && bytes[0] == 0xff && bytes[1] == 0xd8 && bytes[2] == 0xff) return "jpg";
+    if (bytes.size() >= 4 && std::memcmp(bytes.data(), "OTTO", 4) == 0) return "otf";
+    if (bytes.size() >= 4 && bytes[0] == 0 && bytes[1] == 1 && bytes[2] == 0 && bytes[3] == 0) return "ttf";
+    if (!bytes.empty() && bytes[0] == '<') return "svg";
+
+    if (source) {
+        const char* dot = std::strrchr(source, '.');
+        if (dot && dot[1] != '\0') return dot + 1;
+    }
+    return asset_type == LOVE_THORVG_ASSET_FONT ? "ttf" : "";
+}
+
+std::string font_name(const char* source)
+{
+    if (!source) return "love-thorvg-font";
+    constexpr const char prefix[] = "name:";
+    if (std::strncmp(source, prefix, sizeof(prefix) - 1) == 0) return source + sizeof(prefix) - 1;
+    return source;
+}
+
+bool resolve_asset(Tvg_Paint paint, const char* source, void* data)
+{
+    auto* document = static_cast<love_thorvg_document*>(data);
+    if (!document || !document->resolver || !source) return false;
+
+    Tvg_Type type = TVG_TYPE_UNDEF;
+    if (!succeeded(tvg_paint_get_type(paint, &type))) return false;
+    const int asset_type = type == TVG_TYPE_TEXT ? LOVE_THORVG_ASSET_FONT : LOVE_THORVG_ASSET_PICTURE;
+    const size_t required = document->resolver(source, asset_type, nullptr, 0, document->resolver_user_data);
+    if (required == 0 || required > UINT32_MAX) {
+        if (asset_type == LOVE_THORVG_ASSET_PICTURE) document->asset_error = "asset not found: " + std::string(source);
+        return false;
+    }
+
+    std::vector<uint8_t> bytes(required);
+    const size_t written = document->resolver(source, asset_type, bytes.data(), bytes.size(),
+                                               document->resolver_user_data);
+    if (written != required) {
+        if (asset_type == LOVE_THORVG_ASSET_PICTURE) document->asset_error = "asset read failed: " + std::string(source);
+        return false;
+    }
+
+    const char* mime = sniff_mime(bytes, source, asset_type);
+    if (asset_type == LOVE_THORVG_ASSET_FONT) {
+        const auto name = font_name(source);
+        auto result = tvg_font_load_data(name.c_str(), reinterpret_cast<const char*>(bytes.data()),
+                                         static_cast<uint32_t>(bytes.size()), mime, true);
+        if (!succeeded(result)) return false;
+        result = tvg_text_set_font(paint, name.c_str());
+        if (!succeeded(result)) return false;
+        document->loaded_fonts.push_back(name);
+        return true;
+    }
+
+    const auto result = tvg_picture_load_data(paint, reinterpret_cast<const char*>(bytes.data()),
+                                              static_cast<uint32_t>(bytes.size()), mime, "", true);
+    if (!succeeded(result)) {
+        document->asset_error = "asset decode failed: " + std::string(source);
+        return false;
+    }
+    return true;
 }
 
 int apply_transform(love_thorvg_document* document, uint32_t width, uint32_t height,
@@ -74,7 +146,7 @@ extern "C" {
 
 uint32_t love_thorvg_abi_version(void)
 {
-    return 1;
+    return 2;
 }
 
 const char* love_thorvg_version(void)
@@ -87,6 +159,16 @@ int love_thorvg_document_create(const void* data, size_t size, const char* mime_
                                 love_thorvg_document** out_document,
                                 char* error, size_t error_capacity)
 {
+    return love_thorvg_document_create_with_resolver(
+        data, size, mime_type, resource_path, threads, nullptr, nullptr,
+        out_document, error, error_capacity);
+}
+
+int love_thorvg_document_create_with_resolver(
+    const void* data, size_t size, const char* mime_type, const char* resource_path,
+    unsigned threads, love_thorvg_asset_resolver resolver, void* resolver_user_data,
+    love_thorvg_document** out_document, char* error, size_t error_capacity)
+{
     if (error && error_capacity > 0) error[0] = '\0';
     if (!data || size == 0 || !out_document || size > UINT32_MAX) {
         if (error && error_capacity > 0) std::snprintf(error, error_capacity, "invalid document data");
@@ -96,6 +178,8 @@ int love_thorvg_document_create(const void* data, size_t size, const char* mime_
 
     auto* document = new (std::nothrow) love_thorvg_document();
     if (!document) return LOVE_THORVG_OUT_OF_MEMORY;
+    document->resolver = resolver;
+    document->resolver_user_data = resolver_user_data;
 
     auto result = tvg_engine_init(threads);
     if (!succeeded(result)) {
@@ -112,6 +196,15 @@ int love_thorvg_document_create(const void* data, size_t size, const char* mime_
         if (error && error_capacity > 0) std::snprintf(error, error_capacity, "creating ThorVG objects failed");
         love_thorvg_document_destroy(document);
         return LOVE_THORVG_ENGINE_ERROR;
+    }
+
+    if (resolver) {
+        result = tvg_picture_set_asset_resolver(document->picture, resolve_asset, document);
+        if (!succeeded(result)) {
+            set_error(error, error_capacity, "setting asset resolver", result);
+            love_thorvg_document_destroy(document);
+            return LOVE_THORVG_LOAD_ERROR;
+        }
     }
 
     result = tvg_picture_load_data(document->picture,
@@ -141,6 +234,9 @@ void love_thorvg_document_destroy(love_thorvg_document* document)
         tvg_canvas_destroy(document->canvas);
     }
     if (document->animation) tvg_animation_del(document->animation);
+    for (const auto& name : document->loaded_fonts) {
+        tvg_font_load_data(name.c_str(), nullptr, 0, nullptr, false);
+    }
     if (document->engine_initialized) tvg_engine_term();
     delete document;
 }
@@ -155,6 +251,7 @@ int love_thorvg_document_render(love_thorvg_document* document, uint32_t* rgba_p
         return LOVE_THORVG_INVALID_ARGUMENT;
     }
 
+    document->asset_error.clear();
     auto result = tvg_swcanvas_set_target(document->canvas, rgba_pixels, stride_pixels, width, height,
                                           TVG_COLORSPACE_ABGR8888S);
     if (!succeeded(result)) {
@@ -187,6 +284,10 @@ int love_thorvg_document_render(love_thorvg_document* document, uint32_t* rgba_p
     if (!succeeded(result)) {
         set_error(error, error_capacity, "updating canvas", result);
         return LOVE_THORVG_RENDER_ERROR;
+    }
+    if (!document->asset_error.empty()) {
+        if (error && error_capacity > 0) std::snprintf(error, error_capacity, "%s", document->asset_error.c_str());
+        return LOVE_THORVG_LOAD_ERROR;
     }
     result = tvg_canvas_draw(document->canvas, true);
     if (!succeeded(result)) {

@@ -16,10 +16,11 @@ Supported assets:
 
 - SVG files;
 - Lottie JSON files;
-- embedded PNG images inside Lottie files.
+- embedded or relative PNG images inside Lottie files;
+- external Lottie fonts with an explicit family-to-path mapping.
 
-Lottie assets that reference external image or font files are not yet supported
-through LÖVE's virtual filesystem.
+Relative assets are loaded through `love.filesystem`, so they work from normal
+game directories and `.love` archives.
 
 ## Try the examples
 
@@ -81,6 +82,17 @@ end
 function love.quit()
   animation:release()
 end
+```
+
+External images are resolved relative to the animation file. Map fonts that are
+referenced only by family name:
+
+```lua
+local animation = thorvg.new('ui/success.json', {
+  fonts = {
+    Inter = 'fonts/Inter-Regular.ttf',
+  },
+})
 ```
 
 Use the same API for SVG files:

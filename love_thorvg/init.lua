@@ -2,11 +2,17 @@ local ffi = require('ffi')
 
 ffi.cdef [[
 typedef struct love_thorvg_document love_thorvg_document;
+typedef size_t (*love_thorvg_asset_resolver)(const char* source, int asset_type,
+  void* buffer, size_t capacity, void* user_data);
 uint32_t love_thorvg_abi_version(void);
 const char* love_thorvg_version(void);
 int love_thorvg_document_create(const void* data, size_t size, const char* mime_type,
   const char* resource_path, unsigned threads, love_thorvg_document** out_document,
   char* error, size_t error_capacity);
+int love_thorvg_document_create_with_resolver(const void* data, size_t size,
+  const char* mime_type, const char* resource_path, unsigned threads,
+  love_thorvg_asset_resolver resolver, void* resolver_user_data,
+  love_thorvg_document** out_document, char* error, size_t error_capacity);
 void love_thorvg_document_destroy(love_thorvg_document* document);
 int love_thorvg_document_render(love_thorvg_document* document, uint32_t* rgba_pixels,
   uint32_t width, uint32_t height, uint32_t stride_pixels, float progress,
@@ -69,7 +75,7 @@ local function loadNative()
 end
 
 local native = loadNative()
-assert(native.love_thorvg_abi_version() == 1, 'love-thorvg native ABI mismatch')
+assert(native.love_thorvg_abi_version() == 2, 'love-thorvg native ABI mismatch')
 
 local Document = {}
 Document.__index = Document
@@ -94,6 +100,57 @@ end
 local function nativeError(buffer, fallback)
   local message = ffi.string(buffer)
   return message ~= '' and message or fallback
+end
+
+local function assetRoot(path)
+  return path:match('^(.*[/\\])') or ''
+end
+
+local function makeAssetResolver(path, options)
+  local root = options.assetRoot or assetRoot(path)
+  local fontPaths = options.fonts or {}
+  local custom = options.assetResolver
+  local cache = {}
+
+  local function readAsset(source, assetType)
+    local key = assetType .. ':' .. source
+    if cache[key] ~= nil then return cache[key] or nil end
+
+    local ok, bytes
+    if custom then
+      ok, bytes = pcall(custom, source, assetType == 2 and 'font' or 'picture')
+    else
+      local relative = source
+      if assetType == 2 and source:sub(1, 5) == 'name:' then
+        relative = fontPaths[source:sub(6)]
+      end
+      if relative then
+        relative = relative:gsub('^[/\\]+', '')
+        ok, bytes = pcall(love.filesystem.read, root .. relative)
+      end
+    end
+
+    if not ok or bytes == nil then
+      cache[key] = false
+      return nil
+    end
+    if type(bytes) ~= 'string' and bytes.getString then bytes = bytes:getString() end
+    if type(bytes) ~= 'string' then
+      cache[key] = false
+      return nil
+    end
+    cache[key] = bytes
+    return bytes
+  end
+
+  local callback = ffi.cast('love_thorvg_asset_resolver', function(source, assetType, buffer, capacity)
+    local bytes = readAsset(ffi.string(source), assetType)
+    if not bytes then return 0 end
+    if buffer == nil or capacity < #bytes then return #bytes end
+    ffi.copy(buffer, bytes, #bytes)
+    return #bytes
+  end)
+  return callback
 end
 
 local function allocateTarget(self, width, height)
@@ -192,6 +249,7 @@ function Document:release()
   ffi.gc(handle, nil)
   native.love_thorvg_document_destroy(handle)
   self.handle = nil
+  if self.assetCallback then self.assetCallback:free(); self.assetCallback = nil end
   if self.image then self.image:release(); self.image = nil end
   if self.imageData then self.imageData:release(); self.imageData = nil end
 end
@@ -210,16 +268,21 @@ function M.new(path, options)
   local mimeType = options.mimeType or mimeTypes[ext] or ext
   local output = ffi.new('love_thorvg_document*[1]')
   local errorBuffer = ffi.new('char[512]')
-  local result = native.love_thorvg_document_create(
+  local assetCallback = makeAssetResolver(path, options)
+  local result = native.love_thorvg_document_create_with_resolver(
     bytes, #bytes, mimeType, options.resourcePath or '', options.threads or 0,
-    output, errorBuffer, 512)
-  if result ~= 0 then error(nativeError(errorBuffer, 'ThorVG load failed for ' .. path), 2) end
+    assetCallback, nil, output, errorBuffer, 512)
+  if result ~= 0 then
+    assetCallback:free()
+    error(nativeError(errorBuffer, 'ThorVG load failed for ' .. path), 2)
+  end
 
   local handle = ffi.gc(output[0], native.love_thorvg_document_destroy)
   local intrinsicWidth = native.love_thorvg_document_intrinsic_width(handle)
   local intrinsicHeight = native.love_thorvg_document_intrinsic_height(handle)
   local self = setmetatable({
     handle = handle,
+    assetCallback = assetCallback,
     duration = tonumber(native.love_thorvg_document_duration(handle)),
     totalFrames = tonumber(native.love_thorvg_document_total_frames(handle)),
     intrinsicWidth = tonumber(intrinsicWidth),

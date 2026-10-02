@@ -16,6 +16,12 @@ Options:
   value for the process; `0` lets rendering remain on the caller thread.
 - `mimeType`: override format detection.
 - `resourcePath`: native resource directory for external file references.
+- `assetRoot`: virtual-filesystem directory used for relative image and font
+  references; defaults to the document's directory.
+- `fonts`: table mapping Lottie font-family names to virtual-filesystem paths.
+- `assetResolver(source, kind)`: optional custom resolver. It receives the
+  source string and either `"picture"` or `"font"`, and returns a string or
+  LÖVE `Data` object containing the asset bytes. Returning `nil` declines it.
 
 Public metadata fields are `duration`, `totalFrames`, `intrinsicWidth`, and
 `intrinsicHeight`.
@@ -39,4 +45,30 @@ Public metadata fields are `duration`, `totalFrames`, `intrinsicWidth`, and
 The C ABI renders straight-alpha RGBA8 bytes directly into the `ImageData`
 allocation. `Image:replacePixels` performs the CPU-to-GPU upload. The native API
 is declared in `include/love_thorvg.h`; `love_thorvg_abi_version()` currently
-returns `1`.
+returns `2`.
+
+## External assets
+
+Relative Lottie images are resolved from the animation's directory through
+`love.filesystem`:
+
+```text
+ui/
+├── success.json
+└── images/
+    └── confetti.png
+```
+
+For fonts referenced only by family name, provide an explicit mapping:
+
+```lua
+local animation = thorvg.new('ui/success.json', {
+  fonts = {
+    Inter = 'fonts/Inter-Regular.ttf',
+  },
+})
+```
+
+Use `assetResolver` for aliases, generated data, archives, or another virtual
+asset source. Resolver data is copied by the native layer before the callback
+returns.
