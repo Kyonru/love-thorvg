@@ -1,0 +1,182 @@
+# Contributing
+
+Thanks for helping make ThorVG straightforward to use from LÖVE. Changes should
+keep the Lua API easy to copy into a game and keep ThorVG behind the small,
+versioned C ABI in `include/love_thorvg.h`.
+
+## Development setup
+
+Requirements:
+
+- LÖVE 11.x
+- Python 3
+- a C++17 compiler
+- Ninja
+- Git
+
+Create an isolated Meson environment from the repository root:
+
+```sh
+python3 -m venv .venv
+.venv/bin/pip install meson
+```
+
+Build the native library, run the tests, and stage the result into the Lua
+package:
+
+```sh
+PATH="$PWD/.venv/bin:$PATH" ./scripts/build.sh
+```
+
+The build fetches the exact ThorVG revision declared in
+`subprojects/thorvg.wrap`. Generated ThorVG sources, package caches, build
+directories, and the local Python environment are ignored by Git.
+
+To keep build output elsewhere:
+
+```sh
+LOVE_THORVG_BUILD_DIR=/tmp/love-thorvg-build \
+  PATH="$PWD/.venv/bin:$PATH" ./scripts/build.sh
+```
+
+## Architecture
+
+```text
+SVG / Lottie bytes
+        ↓
+ThorVG CPU canvas → reusable LÖVE ImageData → Image:replacePixels
+                                                ↓
+                                  draw directly or in ui.renderView
+```
+
+The native boundary accepts document bytes rather than paths so assets loaded
+through LÖVE's virtual filesystem work in development and `.love` archives.
+ThorVG is pinned to an exact 1.2.0 source revision and built with its CPU, SVG,
+Lottie, and bundled PNG implementations. The bundled PNG decoder keeps release
+artifacts independent of Homebrew or another system package manager.
+
+## Run the example
+
+On macOS with LÖVE installed in `/Applications`:
+
+```sh
+cd examples/basic
+/Applications/love.app/Contents/MacOS/love .
+```
+
+The repository currently includes a macOS ARM64 library. Other platforms and
+architectures must run the build first and stage their matching library.
+
+If the library is stored somewhere else, point the wrapper to it explicitly:
+
+```sh
+LOVE_THORVG_LIBRARY=/absolute/path/to/liblove_thorvg.dylib \
+  /Applications/love.app/Contents/MacOS/love .
+```
+
+## Verification
+
+`scripts/build.sh` runs the native test suite automatically. To rerun only the
+tests after configuring a default `build/` directory:
+
+```sh
+PATH="$PWD/.venv/bin:$PATH" meson compile -C build
+PATH="$PWD/.venv/bin:$PATH" meson test -C build --print-errorlogs
+```
+
+The native suite must continue to cover:
+
+- SVG loading and RGBA rendering;
+- Lottie loading, duration, frame count, and rendering;
+- changing the render target size while reusing a document.
+
+For Lua or packaging changes, also launch `examples/basic` and confirm that the
+native library is discovered without setting `LOVE_THORVG_LIBRARY`. Use the
+arrow keys to visit both the SVG and Lottie examples, and press `R` to verify
+that Lottie playback restarts from its first frame.
+
+## Design constraints
+
+- Do not require a patched LÖVE build.
+- Keep the CPU backend functional before adding optional GPU backends.
+- Render directly into reusable `ImageData` memory; avoid intermediate Lua
+  strings or per-frame texture allocation.
+- Do not rerasterize or upload when animation progress and target size are
+  unchanged.
+- Load document bytes through `love.filesystem` so normal `.love` assets work.
+- Release native and LÖVE resources explicitly in examples and tests.
+- Keep distributed native libraries self-contained; optional image decoders
+  must not introduce package-manager paths or undeclared runtime dependencies.
+
+## Native ABI changes
+
+The LuaJIT declaration in `love_thorvg/init.lua` must match
+`include/love_thorvg.h`. When changing the ABI:
+
+1. update the public header and implementation together;
+2. update the LuaJIT `ffi.cdef` block;
+3. extend the native tests;
+4. increment `love_thorvg_abi_version()` for an incompatible change;
+5. rebuild every shipped platform library.
+
+Never allow a C++ exception to cross the C ABI. Return a
+`love_thorvg_result` value and populate the caller-provided error buffer.
+
+## Platform artifacts
+
+Staged libraries use these directories:
+
+```text
+love_thorvg/native/macos-arm64/liblove_thorvg.dylib
+love_thorvg/native/macos-x64/liblove_thorvg.dylib
+love_thorvg/native/linux-x64/liblove_thorvg.so
+love_thorvg/native/windows-x64/love_thorvg.dll
+```
+
+Run the native tests on the artifact's actual target architecture. Release
+bundles must retain ThorVG's license notices. Native libraries cannot be loaded
+from inside a zipped `.love` archive, so distribution documentation must tell
+users to place the library beside the executable or extract it to a real path.
+
+## Using the library in a game
+
+Copy the complete `love_thorvg/` directory into the game and load it normally:
+
+```lua
+local thorvg = require('love_thorvg')
+local animation
+
+function love.load()
+  animation = thorvg.new('assets/animation.json', {
+    width = 256,
+    height = 256,
+  })
+end
+
+function love.update(dt)
+  animation:update(dt)
+end
+
+function love.draw()
+  animation:draw(100, 100)
+end
+
+function love.quit()
+  animation:release()
+end
+```
+
+## Pull requests
+
+Keep changes focused and describe which platforms were built and tested. Do not
+commit `build/`, `.venv/`, the downloaded `subprojects/thorvg/` checkout, or
+Meson's package cache. Commit a staged native library only when intentionally
+updating a distributed platform artifact.
+
+## Roadmap
+
+- CI-built release artifacts for macOS, Windows, and Linux
+- external Lottie image and font resolution through `love.filesystem`
+- optional bounded frame cache for scrub-heavy interfaces
+- rasterization and upload benchmarks
+- investigation of OpenGL and WebGPU interop after the CPU API is stable

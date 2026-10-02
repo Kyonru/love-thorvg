@@ -1,44 +1,41 @@
 # love-thorvg
 
-ThorVG-powered SVG and Lottie rendering for **LÖVE 11.x**. `love-thorvg` keeps
-ThorVG behind a small C ABI, renders into a reusable `ImageData` allocation,
-and updates a reusable LÖVE texture only when the requested frame changes.
+Render SVG and Lottie animations in **LÖVE 11.x** with ThorVG. `love-thorvg`
+loads assets through `love.filesystem`, renders them into a reusable texture,
+and only redraws when animation progress or output size changes.
 
-The first backend is intentionally CPU-only. It requires no LÖVE fork and is a
-good fit for UI illustrations and a modest number of animations. It is not
-intended for hundreds of large, continuously changing animations.
+It works without a custom LÖVE build and is designed for UI illustrations,
+icons, loaders, onboarding animation, and other modest animation workloads.
 
-## Status
+## Availability
 
-This is an initial macOS-ready implementation. The public Lua API and native ABI
-are versioned, but prebuilt release packaging for macOS, Windows, and Linux is
-the next milestone. ThorVG is pinned to an exact 1.2.0 source revision.
+The repository currently includes a ready-to-use macOS ARM64 library. Windows,
+Linux, and Intel macOS packages are planned but are not distributed yet.
 
-## Build
+Supported assets:
 
-Requirements: a C++17 compiler, Meson 1.3+, Ninja, and Git.
+- SVG files;
+- Lottie JSON files;
+- embedded PNG images inside Lottie files.
+
+Lottie assets that reference external image or font files are not yet supported
+through LÖVE's virtual filesystem.
+
+## Try the examples
+
+On an Apple Silicon Mac with LÖVE installed in `/Applications`:
 
 ```sh
-./scripts/build.sh
+cd examples/basic
+/Applications/love.app/Contents/MacOS/love .
 ```
 
-Meson downloads the pinned ThorVG source, builds its CPU renderer with the SVG
-and Lottie loaders, runs the native smoke test, and stages the dynamic library:
+Use any arrow key to rotate between the SVG and Lottie examples. Press `R` to
+restart the active animation.
 
-```text
-love_thorvg/native/macos-arm64/liblove_thorvg.dylib
-love_thorvg/native/macos-x64/liblove_thorvg.dylib
-love_thorvg/native/linux-x64/liblove_thorvg.so
-love_thorvg/native/windows-x64/love_thorvg.dll
-```
+## Install
 
-Set `LOVE_THORVG_BUILD_DIR` to use a build directory outside the checkout. At
-runtime, `LOVE_THORVG_LIBRARY` can point to an explicit native library.
-
-## Install in a game
-
-Copy the complete `love_thorvg/` directory, including the native library for
-your target, into the game:
+Copy the complete `love_thorvg/` directory into your game:
 
 ```text
 my-game/
@@ -50,84 +47,97 @@ my-game/
             └── liblove_thorvg.dylib
 ```
 
-Native libraries cannot be loaded from inside a zipped `.love` archive. For a
-fused/distributed game, place the platform library beside the executable or set
-`LOVE_THORVG_LIBRARY` to its extracted location.
+Keep the native directory intact so the wrapper can select the correct library.
+To load a library from a custom location, set `LOVE_THORVG_LIBRARY` to its
+absolute path before launching the game.
+
+Native libraries cannot be loaded from inside a zipped `.love` archive. In a
+fused or distributed game, place the native library beside the executable or
+extract it to a real filesystem path.
 
 ## Use
 
 ```lua
 local thorvg = require('love_thorvg')
-local spinner
+local animation
 
 function love.load()
-  spinner = thorvg.new('ui/spinner.json', {
-    width = 128,
-    height = 128,
+  animation = thorvg.new('assets/animation.json', {
+    width = 256,
+    height = 256,
     autoplay = true,
     loop = true,
   })
 end
 
 function love.update(dt)
-  spinner:update(dt)
+  animation:update(dt)
 end
 
 function love.draw()
-  spinner:draw(32, 32)
+  animation:draw(100, 100)
 end
 
 function love.quit()
-  spinner:release()
+  animation:release()
 end
 ```
 
-For immediate-mode UI code, draw the document inside the view callback:
+Use the same API for SVG files:
+
+```lua
+local logo = thorvg.new('assets/logo.svg', {
+  width = 320,
+  height = 180,
+  autoplay = false,
+})
+```
+
+## UI integration
+
+Resize and draw the document inside an immediate-mode view callback:
 
 ```lua
 ui.renderView(function(x, y, width, height)
-  spinner:resize(width, height)
-  spinner:draw(x, y)
+  animation:resize(width, height)
+  animation:draw(x, y)
 end)
 ```
 
-If `renderView` accepts a callback value directly:
+If `renderView` accepts a callback directly:
 
 ```lua
 local asView = require('love_thorvg.view')
-ui.renderView(asView(spinner))
+ui.renderView(asView(animation))
 ```
 
-Call `setProgress(0..1)` or `seek(seconds)` for externally controlled playback.
+## Playback control
+
+```lua
+animation:pause()
+animation:setProgress(0.5) -- normalized position from 0 to 1
+animation:seek(1.25)       -- position in seconds
+animation:play()
+```
+
 Calling `render`, `draw`, or `getImage` repeatedly without changing progress or
-size does not rerasterize or re-upload the texture.
+size reuses the existing frame and does not rerasterize or re-upload it.
 
-See [docs/API.md](docs/API.md) for the complete initial API.
+## Runtime considerations
 
-## Architecture
+Rendering currently uses ThorVG's CPU backend followed by a CPU-to-GPU texture
+upload. This is a practical fit for several UI animations, but not hundreds of
+large animations updating every frame. Reuse document instances, keep output
+dimensions close to their displayed size, and call `release()` when finished.
 
-```text
-SVG / Lottie bytes
-        ↓
-ThorVG CPU canvas → reusable LÖVE ImageData → Image:replacePixels
-                                                ↓
-                                  draw directly or in ui.renderView
-```
+See [docs/API.md](docs/API.md) for the complete API.
 
-The native boundary accepts document bytes rather than paths so assets loaded
-through LÖVE's virtual filesystem work in development and `.love` archives.
-Embedded assets work today; Lottie files that reference external images need a
-future LÖVE-filesystem asset resolver.
+## Contributing
 
-## Roadmap
-
-- CI-built release artifacts for macOS, Windows, and Linux
-- external Lottie image/font resolution through `love.filesystem`
-- optional bounded frame cache for scrub-heavy interfaces
-- benchmarks and upload/raster timing counters
-- investigation of OpenGL/WebGPU interop after the CPU API is stable
+Build instructions, architecture notes, verification steps, and the roadmap are
+in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-`love-thorvg` is MIT licensed. ThorVG is fetched and built separately under its
-own MIT license; release bundles must retain ThorVG's license notices.
+`love-thorvg` is MIT licensed. Distributed builds include ThorVG and must retain
+its license notices.

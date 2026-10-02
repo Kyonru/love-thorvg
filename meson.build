@@ -10,8 +10,9 @@ thorvg_project = subproject(
   'thorvg',
   default_options: [
     'default_library=static',
+    'static=true',
     'engines=cpu',
-    'loaders=svg,lottie',
+    'loaders=svg,lottie,png',
     'bindings=capi',
     'savers=',
     'tests=false',
