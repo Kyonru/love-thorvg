@@ -1,15 +1,29 @@
-name: quality
+name: native artifacts
 
 on:
   push:
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  native:
-    runs-on: ${{ matrix.os }}
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [macos-14, ubuntu-24.04, windows-2025]
+        include:
+          - name: macOS ARM64
+            runner: macos-15
+          - name: macOS x64
+            runner: macos-15-intel
+          - name: Linux x64
+            runner: ubuntu-24.04
+          - name: Windows x64
+            runner: windows-2025
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -19,3 +33,9 @@ jobs:
       - run: meson setup build --wrap-mode=forcefallback
       - run: meson compile -C build
       - run: meson test -C build --print-errorlogs
+      - run: python scripts/stage.py build dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.name }}
+          path: dist/*.zip
+          if-no-files-found: error
