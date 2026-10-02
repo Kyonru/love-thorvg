@@ -61,6 +61,9 @@ function Map.new(thorvg)
     presenting = true,
     presentationTime = 0,
     presentationFrame = 0,
+    selectionScale = 1,
+    selectionVelocity = 0,
+    springActive = false,
   }, Map)
 end
 
@@ -92,15 +95,34 @@ function Map:resize(stage)
 end
 
 function Map:update(dt, paused)
-  if not self.presenting or paused then return end
-  self.presentationTime = math.min(self.presentation.duration, self.presentationTime + dt)
-  local frame = math.min(self.presentation.totalFrames - 1,
-    math.floor(self.presentationTime * 30))
-  if frame ~= self.presentationFrame then
-    self.presentationFrame = frame
-    self.presentation:setProgress(frame / (self.presentation.totalFrames - 1))
+  if paused then return end
+  if self.presenting then
+    self.presentationTime = math.min(self.presentation.duration, self.presentationTime + dt)
+    local frame = math.min(self.presentation.totalFrames - 1,
+      math.floor(self.presentationTime * 30))
+    if frame ~= self.presentationFrame then
+      self.presentationFrame = frame
+      self.presentation:setProgress(frame / (self.presentation.totalFrames - 1))
+    end
+    if self.presentationTime >= self.presentation.duration then self.presenting = false end
   end
-  if self.presentationTime >= self.presentation.duration then self.presenting = false end
+
+  if not self.springActive then return end
+  local remaining = math.min(dt, 1 / 15)
+  while remaining > 0 do
+    local step = math.min(remaining, 1 / 120)
+    local acceleration = -300 * (self.selectionScale - 1) -
+      14 * self.selectionVelocity
+    self.selectionVelocity = self.selectionVelocity + acceleration * step
+    self.selectionScale = self.selectionScale + self.selectionVelocity * step
+    remaining = remaining - step
+  end
+  if math.abs(self.selectionScale - 1) < 0.001 and
+      math.abs(self.selectionVelocity) < 0.01 then
+    self.selectionScale = 1
+    self.selectionVelocity = 0
+    self.springActive = false
+  end
 end
 
 function Map:finishPresentation()
@@ -109,6 +131,13 @@ function Map:finishPresentation()
   self.presentationTime = self.presentation.duration
   self.presentationFrame = self.presentation.totalFrames - 1
   self.presentation:setProgress(1)
+end
+
+function Map:selectRegion(index)
+  self.selectedIndex = index
+  self.selectionScale = 0.92
+  self.selectionVelocity = 0.3
+  self.springActive = true
 end
 
 function Map:sampleAt(x, y)
@@ -157,7 +186,7 @@ function Map:mousepressed(x, y, button)
   self:finishPresentation()
   self.focusIndex = region
   self.hoveredIndex = region
-  self.selectedIndex = region
+  self:selectRegion(region)
   self.inputMode = 'mouse'
   return true
 end
@@ -167,7 +196,7 @@ function Map:touchpressed(x, y)
   if not region then return false end
   self:finishPresentation()
   self.focusIndex = region
-  self.selectedIndex = region
+  self:selectRegion(region)
   self.hoveredIndex = nil
   self.inputMode = 'keyboard'
   return true
@@ -184,7 +213,7 @@ function Map:keypressed(key)
   end
   if (key == 'return' or key == 'kpenter') and self.focusIndex then
     self:finishPresentation()
-    self.selectedIndex = self.focusIndex
+    self:selectRegion(self.focusIndex)
     return true
   end
   return false
@@ -202,9 +231,11 @@ function Map:selectedRegion()
   return self.selectedIndex and self.regions[self.selectedIndex] or nil
 end
 
-function Map:drawHighlight(index, color, alpha)
+function Map:drawHighlight(index, color, alpha, scale)
   if not index then return end
-  local encoded = self.regions[index].color
+  local region = self.regions[index]
+  local encoded = region.color
+  scale = scale or 1
   self.highlightShader:send('targetColor', {
     encoded[1] / 255,
     encoded[2] / 255,
@@ -213,8 +244,13 @@ function Map:drawHighlight(index, color, alpha)
   self.highlightShader:send('highlightColor', {color[1], color[2], color[3], alpha})
   love.graphics.setShader(self.highlightShader)
   love.graphics.setColor(1, 1, 1, 1)
-  love.graphics.draw(self.hitMap:getImage(), self.rect.x, self.rect.y, 0,
-    self.rect.width / self.hitMap.width, self.rect.height / self.hitMap.height)
+  local originX = region.centroid[1] / 800 * self.hitMap.width
+  local originY = region.centroid[2] / 544 * self.hitMap.height
+  local pivotX = self.rect.x + region.centroid[1] / 800 * self.rect.width
+  local pivotY = self.rect.y + region.centroid[2] / 544 * self.rect.height
+  love.graphics.draw(self.hitMap:getImage(), pivotX, pivotY, 0,
+    self.rect.width / self.hitMap.width * scale,
+    self.rect.height / self.hitMap.height * scale, originX, originY)
   love.graphics.setShader()
 end
 
@@ -230,7 +266,7 @@ function Map:draw(stage, theme)
   else
     love.graphics.draw(self.artwork:getImage(), self.rect.x, self.rect.y, 0,
       self.rect.width / self.artwork.width, self.rect.height / self.artwork.height)
-    self:drawHighlight(self.selectedIndex, theme.cobalt, 0.78)
+    self:drawHighlight(self.selectedIndex, theme.cobalt, 0.78, self.selectionScale)
     local active = self:activeIndex()
     if active ~= self.selectedIndex then self:drawHighlight(active, theme.cyan, 0.62) end
   end
@@ -249,6 +285,9 @@ function Map:reset()
   self.presentationTime = 0
   self.presentationFrame = 0
   self.presentation:setProgress(0)
+  self.selectionScale = 1
+  self.selectionVelocity = 0
+  self.springActive = false
 end
 
 function Map:release()

@@ -48,6 +48,13 @@ the higher-resolution interactive SVG takes over afterward.
 - Enter: select the focused province.
 - `R`: clear selection and replay the path-drawing entrance.
 
+Selecting a province draws its existing color-mask region as a separate overlay
+and runs a damped scale spring around the region's area-weighted geographic
+centroid. The base map stays fixed, and the spring adds no ThorVG raster or
+texture upload work. This is intentionally a UI-map technique: a map product
+that continuously deforms or edits regions would be better served by native
+polygon meshes.
+
 ## 03 · SVG stencil
 
 The alpha channel of a ThorVG-rendered SVG populates LÖVE's stencil buffer.

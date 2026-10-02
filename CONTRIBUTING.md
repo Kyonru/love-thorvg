@@ -115,7 +115,8 @@ loops, activate it once, and verify the second hover loop reports cache hits.
 On the map experiment, hover and select both a mainland province and a detached
 island, then use the arrow keys and Enter to verify keyboard selection. Press
 `R` and confirm the Lottie path-drawing entrance replays before returning to the
-interactive SVG.
+interactive SVG. Repeatedly select different regions and confirm each spring
+settles without shifting the base map or causing a ThorVG raster/upload spike.
 
 Example assets need an entry in that example's `assets/LICENSE.md`. Link the
 local file and its original source page, name the applicable license, and record

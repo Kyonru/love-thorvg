@@ -119,8 +119,8 @@ function ui.drawMap(theme, fonts, map, performance, rail, compact)
     x, statusY + 43)
   love.graphics.print(map.presenting and 'CLICK OR PRESS AN ARROW TO SKIP' or
     ('TYPE  %s · POSTAL  %s'):format(active.kind:upper(), active.postal), x, statusY + 65)
-  love.graphics.print(selected and ('SELECTED  ' .. selected.name) or 'SELECTED  —',
-    x, statusY + 87)
+  love.graphics.print(selected and ('SELECTED  ' .. selected.name ..
+    (map.springActive and ' · SETTLING' or '')) or 'SELECTED  —', x, statusY + 87)
   love.graphics.print(('%d FPS · %d DRAWS · %.1f MB GPU · %.1f MB LUA'):format(
     performance.fps, performance.drawCalls, performance.textureMiB, performance.luaMiB),
     x, statusY + 113)

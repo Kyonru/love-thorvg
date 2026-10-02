@@ -43,10 +43,10 @@ cd examples/interactive
 ```
 
 This playground includes an interactive map of the Dominican Republic with a
-Lottie path-drawing entrance and pixel-precise SVG hit testing, an SVG-driven
-stencil, and an interactive vending machine. Hover or keyboard-focus map regions
-and vending products, then click or press Enter to select them. Press `Tab` to
-switch experiments.
+Lottie path-drawing entrance, pixel-precise SVG hit testing, and spring-loaded
+region selection; an SVG-driven stencil; and an interactive vending machine.
+Hover or keyboard-focus map regions and vending products, then click or press
+Enter to select them. Press `Tab` to switch experiments.
 
 Each example includes an `assets/LICENSE.md` manifest linking its local files
 and recording the available source and licensing information.
