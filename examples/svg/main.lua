@@ -16,6 +16,8 @@ local colors = {
 }
 
 local mask
+local morph
+local rasterSnapshot
 local stencilShader
 local fonts = {}
 local stage = {x = 0, y = 0, size = 1}
@@ -25,6 +27,11 @@ local cutoff = 0.5
 local elapsed = 0
 local paused = false
 local stencilEnabled = true
+local experiment = 1
+local morphProgress = 0
+local morphManual = false
+local morphSize = 1
+local assetStats = {vectorKB = 0, pngKB = 0, spriteMiB = 0}
 
 local function setColor(color, alpha)
   love.graphics.setColor(color[1], color[2], color[3], alpha or color[4] or 1)
@@ -49,6 +56,8 @@ local function layout()
   end
 
   if mask then mask:resize(stage.size, stage.size) end
+  morphSize = math.max(96, math.floor(stage.size * (love.graphics.getWidth() < 820 and 0.36 or 0.38)))
+  if morph then morph:resize(morphSize, morphSize) end
 end
 
 local function drawMask()
@@ -116,6 +125,62 @@ local function drawStage()
   love.graphics.rectangle('line', stage.x, stage.y, stage.size, stage.size, 24, 24)
 end
 
+local function drawCheckerboard(x, y, size)
+  local cell = math.max(12, math.floor(size / 8))
+  love.graphics.setScissor(x, y, size, size)
+  for row = 0, math.ceil(size / cell) do
+    for column = 0, math.ceil(size / cell) do
+      setColor((row + column) % 2 == 0 and colors.panelRaised or colors.panel, 0.72)
+      love.graphics.rectangle('fill', x + column * cell, y + row * cell, cell, cell)
+    end
+  end
+  love.graphics.setScissor()
+end
+
+local function drawComparisonLabel(text, x, y, width, active)
+  setColor(active and colors.cyan or colors.coral)
+  love.graphics.setFont(fonts.label)
+  love.graphics.printf(text, x, y, width, 'center')
+end
+
+local function drawMorphStage()
+  local x, y, size = stage.x, stage.y, stage.size
+  setColor(colors.panel)
+  love.graphics.rectangle('fill', x - 1, y - 1, size + 2, size + 2, 24, 24)
+
+  local gutter = math.max(14, math.floor(size * 0.035))
+  local paneWidth = (size - gutter * 3) * 0.5
+  local visualSize = math.min(morphSize, paneWidth - 8)
+  local visualY = y + math.max(54, size * 0.18)
+  local leftX = x + gutter + (paneWidth - visualSize) * 0.5
+  local rightPaneX = x + gutter * 2 + paneWidth
+  local rightX = rightPaneX + (paneWidth - visualSize) * 0.5
+
+  drawComparisonLabel('VECTOR PATH · LIVE', x + gutter, y + 24, paneWidth, true)
+  drawComparisonLabel('PNG · SNAPSHOT', rightPaneX, y + 24, paneWidth, false)
+  drawCheckerboard(leftX, visualY, visualSize)
+  drawCheckerboard(rightX, visualY, visualSize)
+
+  morph:setProgress(morphProgress)
+  morph:draw(leftX + visualSize * 0.5, visualY + visualSize * 0.5, 0,
+    visualSize / morphSize, visualSize / morphSize, morphSize * 0.5, morphSize * 0.5)
+
+  love.graphics.setColor(1, 1, 1, 1)
+  local rasterWidth, rasterHeight = rasterSnapshot:getDimensions()
+  love.graphics.draw(rasterSnapshot, rightX + visualSize * 0.5, visualY + visualSize * 0.5,
+    0, visualSize / rasterWidth, visualSize / rasterHeight, rasterWidth * 0.5, rasterHeight * 0.5)
+
+  local captionY = visualY + visualSize + math.max(20, size * 0.055)
+  setColor(colors.ink)
+  love.graphics.setFont(fonts.body)
+  love.graphics.printf('Smooth geometry\nat any progress', x + gutter, captionY, paneWidth, 'center')
+  love.graphics.printf('One fixed state\nat one resolution', rightPaneX, captionY, paneWidth, 'center')
+
+  setColor(colors.line)
+  love.graphics.line(x + size * 0.5, y + 20, x + size * 0.5, y + size - 20)
+  love.graphics.rectangle('line', x, y, size, size, 24, 24)
+end
+
 local function drawKey(x, y, key, label, active)
   local keyWidth = math.max(34, fonts.key:getWidth(key) + 18)
   setColor(active and colors.cobalt or colors.panelRaised)
@@ -128,9 +193,56 @@ local function drawKey(x, y, key, label, active)
   love.graphics.print(label, x + keyWidth + 12, y + 5)
 end
 
+local function drawMorphRail(x, y, width, compact)
+  setColor(colors.cyan)
+  love.graphics.setFont(fonts.label)
+  love.graphics.print('VECTOR / RASTER 02', x, y)
+
+  setColor(colors.ink)
+  love.graphics.setFont(compact and fonts.compactTitle or fonts.title)
+  love.graphics.printf(compact and 'One path, every in-between' or 'One path,\nevery in-between',
+    x, y + 30, width, 'left')
+
+  if compact then
+    setColor(colors.muted)
+    love.graphics.setFont(fonts.body)
+    love.graphics.printf('← → scrub    SPACE pause    TAB switch    R reset',
+      x, y + 72, width, 'left')
+    return
+  end
+
+  setColor(colors.muted)
+  love.graphics.setFont(fonts.body)
+  love.graphics.printf(
+    'ThorVG interpolates vector path keyframes. The PNG can only scale or be replaced by another image.',
+    x, y + 132, width, 'left')
+
+  local statusY = y + 218
+  setColor(colors.line)
+  love.graphics.line(x, statusY, x + width, statusY)
+  setColor(colors.cyan)
+  love.graphics.setFont(fonts.label)
+  love.graphics.print(('MORPH  %03d%%'):format(math.floor(morphProgress * 100 + 0.5)), x, statusY + 18)
+  setColor(colors.muted)
+  love.graphics.print(('VECTOR  %.1f KB'):format(assetStats.vectorKB), x, statusY + 43)
+  love.graphics.print(('PNG SNAPSHOT  %.1f KB'):format(assetStats.pngKB), x, statusY + 65)
+  love.graphics.printf(('A %d-frame PNG sequence at 256 px is about %.0f MiB decoded.'):format(
+    morph.totalFrames, assetStats.spriteMiB), x, statusY + 91, width, 'left')
+
+  local controlsY = statusY + 148
+  drawKey(x, controlsY, '← →', 'Scrub morph')
+  drawKey(x, controlsY + 38, 'SPACE', paused and 'Resume morph' or 'Pause morph', paused)
+  drawKey(x, controlsY + 76, 'TAB', 'Stencil experiment')
+  drawKey(x, controlsY + 114, 'R', 'Reset')
+end
+
 local function drawRail()
   local x, y, width = rail.x, rail.y, rail.width
   local compact = love.graphics.getWidth() < 820
+  if experiment == 2 then
+    drawMorphRail(x, y, width, compact)
+    return
+  end
   setColor(colors.cyan)
   love.graphics.setFont(fonts.label)
   love.graphics.print('SVG / STENCIL 01', x, y)
@@ -147,7 +259,7 @@ local function drawRail()
       x, y + 34, width, 'right')
     setColor(colors.muted)
     love.graphics.setFont(fonts.body)
-    love.graphics.printf('← → rotate    ↑ ↓ edge    S stencil    SPACE pause    R reset',
+    love.graphics.printf('← → rotate    ↑ ↓ edge    S stencil    TAB switch    R reset',
       x, y + 72, width, 'left')
     return
   end
@@ -174,6 +286,7 @@ local function drawRail()
   drawKey(x, controlsY + 76, 'S', 'Toggle stencil', stencilEnabled)
   drawKey(x, controlsY + 114, 'SPACE', paused and 'Resume motion' or 'Pause motion', paused)
   drawKey(x, controlsY + 152, 'R', 'Reset')
+  drawKey(x, controlsY + 190, 'TAB', 'Morph experiment')
 end
 
 local function reset()
@@ -182,6 +295,8 @@ local function reset()
   elapsed = 0
   paused = false
   stencilEnabled = true
+  morphProgress = 0
+  morphManual = false
 end
 
 function love.load()
@@ -210,6 +325,19 @@ function love.load()
     autoplay = false,
     filter = 'linear',
   })
+  morph = thorvg.new('assets/morph.json', {
+    width = 256,
+    height = 256,
+    autoplay = false,
+    filter = 'linear',
+  })
+  rasterSnapshot = love.graphics.newImage('assets/morph-start.png')
+  rasterSnapshot:setFilter('linear', 'linear')
+  local vectorInfo = love.filesystem.getInfo('assets/morph.json')
+  local pngInfo = love.filesystem.getInfo('assets/morph-start.png')
+  assetStats.vectorKB = vectorInfo.size / 1024
+  assetStats.pngKB = pngInfo.size / 1024
+  assetStats.spriteMiB = 256 * 256 * 4 * morph.totalFrames / (1024 * 1024)
   layout()
 end
 
@@ -219,11 +347,23 @@ end
 
 function love.update(dt)
   if not paused then elapsed = elapsed + dt end
-  local rotationSpeed = 1.15
-  if love.keyboard.isDown('left') then rotation = rotation - rotationSpeed * dt end
-  if love.keyboard.isDown('right') then rotation = rotation + rotationSpeed * dt end
-  if love.keyboard.isDown('up') then cutoff = math.min(0.95, cutoff + dt * 0.5) end
-  if love.keyboard.isDown('down') then cutoff = math.max(0.05, cutoff - dt * 0.5) end
+  if experiment == 1 then
+    local rotationSpeed = 1.15
+    if love.keyboard.isDown('left') then rotation = rotation - rotationSpeed * dt end
+    if love.keyboard.isDown('right') then rotation = rotation + rotationSpeed * dt end
+    if love.keyboard.isDown('up') then cutoff = math.min(0.95, cutoff + dt * 0.5) end
+    if love.keyboard.isDown('down') then cutoff = math.max(0.05, cutoff - dt * 0.5) end
+  else
+    local scrubDirection = (love.keyboard.isDown('right') and 1 or 0) -
+      (love.keyboard.isDown('left') and 1 or 0)
+    if scrubDirection ~= 0 then
+      paused = true
+      morphManual = true
+      morphProgress = math.max(0, math.min(1, morphProgress + scrubDirection * dt * 0.45))
+    elseif not paused and not morphManual then
+      morphProgress = 0.5 - 0.5 * math.cos(elapsed * 1.25)
+    end
+  end
 end
 
 function love.keypressed(key)
@@ -231,18 +371,25 @@ function love.keypressed(key)
     stencilEnabled = not stencilEnabled
   elseif key == 'space' then
     paused = not paused
+    if not paused then morphManual = false end
   elseif key == 'r' then
     reset()
+  elseif key == 'tab' then
+    experiment = experiment == 1 and 2 or 1
+    paused = false
+    morphManual = false
   elseif key == 'escape' then
     love.event.quit()
   end
 end
 
 function love.draw()
-  drawStage()
+  if experiment == 1 then drawStage() else drawMorphStage() end
   drawRail()
 end
 
 function love.quit()
   if mask then mask:release() end
+  if morph then morph:release() end
+  if rasterSnapshot then rasterSnapshot:release() end
 end

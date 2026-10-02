@@ -41,10 +41,9 @@ cd examples/svg
 /Applications/love.app/Contents/MacOS/love .
 ```
 
-This playground uses a rendered SVG as an arbitrary stencil for ordinary LÖVE
-drawing. Rotate the shape with the left and right arrows, adjust its alpha
-cutoff with the up and down arrows, and press `S` to compare the clipped and
-unclipped result.
+This playground compares vector rendering with fixed PNG artwork. It includes
+an SVG-driven stencil and a live vector path morph beside a PNG snapshot. Press
+`Tab` to switch experiments; the on-screen controls explain each one.
 
 ## Install
 
