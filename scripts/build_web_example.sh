@@ -59,6 +59,7 @@ emcmake cmake -S "$megasource_dir" -B "$runtime_build_dir" \
   -DLOVE_THORVG_ROOT="$repo_root" \
   -DLOVE_THORVG_LIBRARY="$core_build_dir/liblove_thorvg.a" \
   -DTHORVG_LIBRARY="$core_build_dir/subprojects/thorvg/src/libthorvg-1.a" \
+  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build "$runtime_build_dir" --target love --parallel
