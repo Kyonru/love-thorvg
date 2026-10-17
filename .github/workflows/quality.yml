@@ -33,6 +33,7 @@ jobs:
       - run: meson setup build --wrap-mode=forcefallback
       - run: meson compile -C build
       - run: meson test -C build --print-errorlogs
+      - run: python -m unittest tests.test_combine_packages
       - run: python scripts/stage.py build dist
       - uses: actions/upload-artifact@v4
         with:

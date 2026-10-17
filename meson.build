@@ -23,17 +23,30 @@ thorvg_project = subproject(
 thorvg_dependency = thorvg_project.get_variable('thorvg_dep')
 thorvg_headers = thorvg_project.get_variable('headers')
 
-love_thorvg_library = shared_library(
-  'love_thorvg',
-  'native/love_thorvg.cpp',
-  dependencies: thorvg_dependency,
-  include_directories: [include_directories('include'), thorvg_headers],
-  cpp_args: ['-DLOVE_THORVG_BUILD'],
-  gnu_symbol_visibility: 'hidden',
-  install: true,
-)
+is_web = host_machine.system() == 'emscripten'
+library_args = {
+  'dependencies': thorvg_dependency,
+  'include_directories': [include_directories('include'), thorvg_headers],
+  'cpp_args': ['-DLOVE_THORVG_BUILD'],
+  'gnu_symbol_visibility': 'hidden',
+}
 
-if get_option('build_tests')
+if is_web
+  love_thorvg_library = static_library(
+    'love_thorvg',
+    'native/love_thorvg.cpp',
+    kwargs: library_args,
+  )
+else
+  love_thorvg_library = shared_library(
+    'love_thorvg',
+    'native/love_thorvg.cpp',
+    install: true,
+    kwargs: library_args,
+  )
+endif
+
+if get_option('build_tests') and not is_web
   native_test = executable(
     'native-test',
     'tests/native_test.cpp',
@@ -41,4 +54,28 @@ if get_option('build_tests')
     include_directories: include_directories('include'),
   )
   test('native API', native_test)
+endif
+
+if get_option('web_harness')
+  if not is_web
+    error('web_harness requires the Emscripten cross file')
+  endif
+
+  executable(
+    'love_thorvg_web',
+    'web/wasm_entry.cpp',
+    link_with: love_thorvg_library,
+    dependencies: thorvg_dependency,
+    include_directories: include_directories('include'),
+    link_args: [
+      '-sMODULARIZE=1',
+      '-sEXPORT_NAME=LoveThorVG',
+      '-sEXPORT_ES6=1',
+      '-sENVIRONMENT=web,node',
+      '-sALLOW_MEMORY_GROWTH=1',
+      '-sEXPORTED_FUNCTIONS=["_malloc","_free","_love_thorvg_abi_version","_love_thorvg_version","_love_thorvg_document_create","_love_thorvg_document_destroy","_love_thorvg_document_render","_love_thorvg_document_duration","_love_thorvg_document_total_frames","_love_thorvg_document_intrinsic_width","_love_thorvg_document_intrinsic_height"]',
+      '-sEXPORTED_RUNTIME_METHODS=["UTF8ToString","HEAPU8","HEAPU32"]',
+    ],
+    install: false,
+  )
 endif

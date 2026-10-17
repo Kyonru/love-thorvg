@@ -1,0 +1,72 @@
+name: Experimental web backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "include/**"
+      - "love_thorvg/**"
+      - "native/**"
+      - "subprojects/**"
+      - "tests/web_wasm_test.mjs"
+      - "web/**"
+      - "meson.build"
+      - "meson_options.txt"
+      - ".github/workflows/web.yml"
+  pull_request:
+    paths:
+      - "include/**"
+      - "love_thorvg/**"
+      - "native/**"
+      - "subprojects/**"
+      - "tests/web_wasm_test.mjs"
+      - "web/**"
+      - "meson.build"
+      - "meson_options.txt"
+      - ".github/workflows/web.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: emscripten-core/setup-emsdk@v16
+        with:
+          version: latest
+      - name: Install build tools
+        run: python -m pip install meson ninja
+      - name: Compile-check the Lua 5.1 bridge
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes liblua5.1-0-dev
+          em++ -std=c++17 -fsyntax-only web/love_thorvg_lua.cpp web/register_module.cpp -Iinclude -I/usr/include/lua5.1
+      - name: Build WebAssembly proof
+        run: >-
+          meson setup build-web
+          --cross-file web/emscripten.ini
+          -Dbuild_tests=false
+          -Dweb_harness=true
+          -Dthorvg:threads=false
+          -Dthorvg:simd=false
+          -Dthorvg:file=false
+          --wrap-mode=forcefallback
+      - run: meson compile -C build-web
+      - name: Decode and render SVG and Lottie in Node
+        run: node tests/web_wasm_test.mjs "$PWD/build-web/love_thorvg_web.js"
+      - name: Stage browser proof
+        run: |
+          mkdir web-proof
+          cp web/demo/* web-proof/
+          cp build-web/love_thorvg_web.js build-web/love_thorvg_web.wasm web-proof/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: experimental-web-proof
+          path: web-proof
+          if-no-files-found: error

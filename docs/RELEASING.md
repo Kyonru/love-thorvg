@@ -5,8 +5,8 @@ Releases are built and published by
 Pushing a tag named
 `v<major>.<minor>.<patch>` builds and tests the native library on macOS ARM64,
 macOS x64, Linux x64, and Windows x64. The workflow packages one ZIP for each
-target and creates a GitHub release with generated notes after every build
-succeeds.
+target, validates and combines those packages into an `all-desktop` ZIP, and
+creates a GitHub release with generated notes after every build succeeds.
 
 ## Prepare a release
 
@@ -55,7 +55,8 @@ LICENSE
 THORVG-LICENSE
 ```
 
-The package intentionally contains one native target. Users should download
-the archive matching the machine that will run the game. A game distributed
-for several desktop targets can merge the `love_thorvg/native/` directories
-from those archives.
+The four target archives intentionally contain one native target each. The
+release also contains `love-thorvg-v<version>-all-desktop.zip`, which has all
+four directories in one package. `scripts/combine_packages.py` normalizes text
+line endings and verifies all shared Lua, documentation, and license content
+before it creates that archive.

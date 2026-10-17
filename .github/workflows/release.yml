@@ -86,6 +86,9 @@ jobs:
           path: release
           merge-multiple: true
 
+      - name: Assemble validated all-desktop archive
+        run: python scripts/combine_packages.py release release --version "${{ github.ref_name }}"
+
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

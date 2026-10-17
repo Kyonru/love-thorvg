@@ -7,7 +7,16 @@
         "rule": "overused-font",
         "value": "arial",
         "createdAt": "2026-10-17T00:45:07.787Z",
-        "reason": "Agent: detector matched the Arial substring inside the intentional Arial Rounded MT Bold display face, not generic Arial"
+        "reason": "False positive: Arial is only a substring/fallback of the platform-specific Arial Rounded MT Bold display face; the documentation does not select plain Arial."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "docs/stylesheets/extra.css"
+        ],
+        "createdAt": "2026-10-17T00:54:21.751Z",
+        "reason": "False positive: the card uses a uniform 1px neutral border on all four sides, not a colored side-tab accent."
       }
     ]
   }

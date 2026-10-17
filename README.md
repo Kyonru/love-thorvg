@@ -16,7 +16,13 @@ icons, loaders, onboarding animation, and other modest animation workloads.
 
 [GitHub releases](https://github.com/Kyonru/love-thorvg/releases) provide tested
 packages for macOS ARM64, macOS x64, Linux x64, and Windows x64. The repository
-also includes a ready-to-use macOS ARM64 library.
+also includes an `all-desktop` bundle for projects that package several targets,
+and a ready-to-use macOS ARM64 library.
+
+An [experimental web backend](https://kyonru.github.io/love-thorvg/experimental/web/)
+compiles the same ThorVG C ABI to WebAssembly. It currently requires a custom
+love.js build; see the [live proof](https://kyonru.github.io/love-thorvg/experimental/web-proof/)
+and the explicit support boundary before adopting it.
 
 Supported assets:
 
@@ -74,6 +80,8 @@ my-game/
 ```
 
 Keep the native directory intact so the wrapper can select the correct library.
+Use the `all-desktop` ZIP if the same project tree produces packages for several
+operating systems; otherwise the smaller target-specific ZIP is sufficient.
 To load a library from a custom location, set `LOVE_THORVG_LIBRARY` to its
 absolute path before launching the game.
 

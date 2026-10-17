@@ -1,3 +1,9 @@
+-- Browser builds of LÖVE use PUC Lua rather than LuaJIT, so FFI is not
+-- available. The experimental web runtime preloads a small C module instead.
+if love and love.system and love.system.getOS and love.system.getOS() == 'Web' then
+  return require('love_thorvg.web')
+end
+
 local ffi = require('ffi')
 
 ffi.cdef [[

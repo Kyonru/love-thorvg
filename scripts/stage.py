@@ -74,6 +74,7 @@ def main() -> None:
     native.mkdir(parents=True, exist_ok=True)
 
     shutil.copy2(root / "love_thorvg" / "init.lua", package / "love_thorvg" / "init.lua")
+    shutil.copy2(root / "love_thorvg" / "web.lua", package / "love_thorvg" / "web.lua")
     shutil.copy2(root / "love_thorvg" / "view.lua", package / "love_thorvg" / "view.lua")
     shutil.copy2(matches[0], native / library_name)
     shutil.copy2(root / "README.md", package / "README.md")

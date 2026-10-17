@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>love-thorvg WebAssembly proof</title>
+  <link rel="stylesheet" href="demo.css">
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Experimental WebAssembly backend</p>
+    <h1>ThorVG is rendering this Lottie in your browser.</h1>
+    <canvas id="stage" width="320" height="320" aria-label="Animated cyan shape rendered by ThorVG"></canvas>
+    <p id="status">Loading WebAssembly…</p>
+    <p class="note">This exercises the same C ABI used by the LÖVE adapter. It is a backend proof, not a stock love.js build.</p>
+  </main>
+  <script type="module" src="demo.js"></script>
+</body>
+</html>

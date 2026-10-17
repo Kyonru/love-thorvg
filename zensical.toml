@@ -13,7 +13,12 @@ nav = [
   { "Overview" = "index.md" },
   { "Get started" = [
     { "Quick start" = "getting-started/quick-start.md" },
+    { "Multi-platform bundle" = "getting-started/multi-platform.md" },
     { "Assets and fonts" = "guides/assets.md" },
+  ] },
+  { "Experimental" = [
+    { "Web backend" = "experimental/web.md" },
+    { "Web proof" = "experimental/web-proof.md" },
   ] },
   { "Build with it" = [
     { "Examples" = "guides/examples.md" },

@@ -151,6 +151,8 @@ do not present the asset as cleared for redistribution.
 - Release native and LÖVE resources explicitly in examples and tests.
 - Keep distributed native libraries self-contained; optional image decoders
   must not introduce package-manager paths or undeclared runtime dependencies.
+- Keep the web backend free of LuaJIT FFI. Its extra RGBA string copy is an
+  explicit experimental portability tradeoff, not a desktop-path regression.
 
 ## Native ABI changes
 
@@ -181,6 +183,24 @@ Run the native tests on the artifact's actual target architecture. Release
 bundles must retain ThorVG's license notices. Native libraries cannot be loaded
 from inside a zipped `.love` archive, so distribution documentation must tell
 users to place the library beside the executable or extract it to a real path.
+
+The release workflow runs `scripts/combine_packages.py` after all four builds.
+Run `python3 -m unittest tests.test_combine_packages` when changing packaging.
+
+## Experimental web verification
+
+With Emscripten on `PATH`, build and run the same proof used by CI:
+
+```sh
+meson setup build-web --cross-file web/emscripten.ini -Dbuild_tests=false \
+  -Dweb_harness=true -Dthorvg:threads=false -Dthorvg:simd=false -Dthorvg:file=false
+meson compile -C build-web
+node tests/web_wasm_test.mjs "$PWD/build-web/love_thorvg_web.js"
+```
+
+Web changes must preserve SVG and Lottie pixel proof. Changes to the Lua bridge
+must also be tested in a custom love.js build because the standalone harness
+does not initialize LÖVE or the Lua module.
 
 ## Using the library in a game
 

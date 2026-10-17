@@ -1,1 +1,2 @@
 option('build_tests', type: 'boolean', value: true, description: 'Build love-thorvg native tests')
+option('web_harness', type: 'boolean', value: false, description: 'Build the experimental Emscripten proof harness')
