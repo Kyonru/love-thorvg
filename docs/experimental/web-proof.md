@@ -1,10 +1,10 @@
 # Web proof
 
-The [live WebAssembly demo](../web-demo/) loads the generated module in the browser
+The [live WebAssembly demo](/love-thorvg/experimental/web-demo/) loads the generated module in the browser
 and animates a Lottie document by rasterizing every frame with ThorVG. Its status
 line reports the live C ABI version and animation duration.
 
-[Open the live proof](../web-demo/){ .md-button .md-button--primary }
+[Open the live proof](/love-thorvg/experimental/web-demo/){ .md-button .md-button--primary }
 
 ## Automated evidence
 
