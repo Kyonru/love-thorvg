@@ -5,6 +5,12 @@ repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 build_root=${1:-"$repo_root/build-lovejs"}
 output_dir=${2:-"$repo_root/dist/web-example"}
 
+# CMake resolves path-valued cache entries relative to its source directory.
+# Normalize caller-provided paths so CI can safely use relative directories.
+mkdir -p "$build_root" "$output_dir"
+build_root=$(cd "$build_root" && pwd)
+output_dir=$(cd "$output_dir" && pwd)
+
 love_commit=32e0716b43a51686f5fa9ac04ca08b6410b698a5
 megasource_commit=3bc0b46670a2912c02c54c6977b9510e64e89023
 love_dir="$build_root/love"
@@ -57,7 +63,6 @@ emcmake cmake -S "$megasource_dir" -B "$runtime_build_dir" \
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build "$runtime_build_dir" --target love --parallel
 
-mkdir -p "$output_dir"
 cp "$repo_root/examples/web/index.html" "$repo_root/examples/web/example.css" \
   "$repo_root/examples/web/example.js" "$output_dir/"
 cp "$runtime_build_dir/love/love.js" "$runtime_build_dir/love/love.wasm" "$output_dir/"
