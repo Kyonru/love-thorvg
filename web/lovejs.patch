@@ -2,6 +2,14 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 59a3799..64a879f 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
+@@ -1769,2 +1769,6 @@
+-add_library(${LOVE_LIB_NAME} SHARED ${LOVE_LIB_SRC} ${LOVE_RC})
++if(EMSCRIPTEN)
++	add_library(${LOVE_LIB_NAME} STATIC ${LOVE_LIB_SRC} ${LOVE_RC})
++else()
++	add_library(${LOVE_LIB_NAME} SHARED ${LOVE_LIB_SRC} ${LOVE_RC})
++endif()
+ target_link_libraries(${LOVE_LIB_NAME} ${LOVE_LINK_LIBRARIES} ${LOVE_3P})
 @@ -1789,7 +1789,16 @@ if(EMSCRIPTEN)
  		add_definitions("-s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=8 -s USE_SDL=2 -s FULL_ES2=1 -s INVOKE_RUN=0 --post-js ${CMAKE_CURRENT_SOURCE_DIR}/src/scripts/EmscriptenPersistence.js")
  	endif()
