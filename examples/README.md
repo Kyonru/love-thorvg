@@ -16,3 +16,11 @@ render statistics.
 Each example is a standalone LÖVE project and includes an
 `assets/LICENSE.md` manifest. Review that manifest before copying sample
 artwork into another project.
+
+## Living reliquary HUD
+
+[`reliquary-hud/`](reliquary-hud/) is a high-detail, state-driven boss HUD.
+Layered SVG documents provide an ornate frame, a branching health topology,
+and progressive cracks; LÖVE shaders drive continuous health, delayed damage,
+phase changes, runtime recoloring, and impact effects without enumerating every
+state in a spritesheet.
