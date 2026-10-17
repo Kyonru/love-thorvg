@@ -8,7 +8,9 @@ on:
       - "love_thorvg/**"
       - "examples/web/**"
       - "native/**"
+      - "scripts/build_web_example.sh"
       - "subprojects/**"
+      - "tests/web_love_test.mjs"
       - "tests/web_wasm_test.mjs"
       - "web/**"
       - "meson.build"
@@ -20,7 +22,9 @@ on:
       - "love_thorvg/**"
       - "examples/web/**"
       - "native/**"
+      - "scripts/build_web_example.sh"
       - "subprojects/**"
+      - "tests/web_love_test.mjs"
       - "tests/web_wasm_test.mjs"
       - "web/**"
       - "meson.build"
@@ -41,7 +45,7 @@ jobs:
           python-version: "3.12"
       - uses: emscripten-core/setup-emsdk@v16
         with:
-          version: latest
+          version: "6.0.12"
       - name: Install build tools
         run: python -m pip install meson ninja
       - name: Compile-check the Lua 5.1 bridge
@@ -49,27 +53,20 @@ jobs:
           sudo apt-get update
           sudo apt-get install --yes liblua5.1-0-dev
           c++ -std=c++17 -fsyntax-only web/love_thorvg_lua.cpp web/register_module.cpp -Iinclude -I/usr/include/lua5.1
-      - name: Build WebAssembly proof
-        run: >-
-          meson setup build-web
-          --cross-file web/emscripten.ini
-          -Dbuild_tests=false
-          -Dweb_harness=true
-          -Dthorvg:threads=false
-          -Dthorvg:simd=false
-          -Dthorvg:file=false
-          --wrap-mode=forcefallback
-      - run: meson compile -C build-web
+      - name: Build the custom LÖVE runtime and example
+        run: ./scripts/build_web_example.sh build-lovejs web-proof
       - name: Decode and render SVG and Lottie in Node
-        run: node tests/web_wasm_test.mjs "$PWD/build-web/love_thorvg_web.js"
-      - name: Stage browser proof
+        run: node tests/web_wasm_test.mjs "$PWD/build-lovejs/core/love_thorvg_web.js"
+      - name: Install Chromium proof runner
         run: |
-          mkdir web-proof
-          cp examples/web/index.html examples/web/example.css examples/web/example.js web-proof/
-          cp -R examples/web/assets web-proof/assets
-          cp build-web/love_thorvg_web.js build-web/love_thorvg_web.wasm web-proof/
+          npm install --no-save playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run the LÖVE game in Chromium
+        run: node tests/web_love_test.mjs web-proof web-proof.png
       - uses: actions/upload-artifact@v7
         with:
           name: experimental-web-proof
-          path: web-proof
+          path: |
+            web-proof
+            web-proof.png
           if-no-files-found: error

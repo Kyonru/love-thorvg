@@ -1,5 +1,7 @@
+extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
+}
 
 extern "C" int luaopen_love_thorvg_web(lua_State* state);
 

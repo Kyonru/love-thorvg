@@ -1,25 +1,24 @@
-# WebAssembly example
+# LÖVE WebAssembly example
 
-This experimental browser example decodes an SVG backdrop and two animations
-shared with the repository's Lottie examples, then rasterizes them through the
-real love-thorvg WebAssembly C ABI. Switch artwork, play, pause, restart, and
-scrub the Lottie timeline from the browser UI.
+This experimental example is a real LÖVE game. `game/main.lua` runs through
+LÖVE's normal callbacks, requires `love_thorvg`, reads two Lottie files from
+LÖVE's virtual filesystem, and draws the resulting textures with
+`love.graphics.draw`.
 
-Build the WebAssembly harness from the repository root:
+The custom compatibility runtime is built from pinned love.js, LÖVE, and
+megasource revisions. It statically links ThorVG and preloads the browser Lua C
+module, so the game uses the same compact Lua API as desktop builds.
 
-```sh
-meson setup build-web --cross-file web/emscripten.ini \
-  -Dbuild_tests=false -Dweb_harness=true \
-  -Dthorvg:threads=false -Dthorvg:simd=false -Dthorvg:file=false
-meson compile -C build-web
-```
-
-Stage and serve the example:
+Install Emscripten, Meson, Ninja, and CMake, then build from the repository root:
 
 ```sh
-cp build-web/love_thorvg_web.{js,wasm} examples/web/
-python3 -m http.server 8000
+./scripts/build_web_example.sh
+python3 -m http.server 8000 --directory dist/web-example
 ```
 
-Open `http://localhost:8000/examples/web/`. The generated JavaScript and WASM
-files are ignored release output and should not be committed.
+Open `http://localhost:8000`. The build writes generated JavaScript, WASM, and
+game data under `dist/web-example`; those outputs are not committed.
+
+The initial backend is intentionally single-threaded and disables audio. Web
+support remains experimental while browser input, persistence, performance,
+and compatibility receive broader testing.

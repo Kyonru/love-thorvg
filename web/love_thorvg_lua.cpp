@@ -1,7 +1,9 @@
 #include "love_thorvg.h"
 
+extern "C" {
 #include <lua.h>
 #include <lauxlib.h>
+}
 
 #include <cstdint>
 #include <cstring>

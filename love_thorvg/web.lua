@@ -108,7 +108,8 @@ local function allocateTarget(self, width, height)
 end
 
 function Document:setProgress(progress)
-  progress = math.max(0, math.min(1, assert(tonumber(progress), 'progress must be a number')))
+  progress = assert(tonumber(progress), 'progress must be a number')
+  progress = math.max(0, math.min(1, progress))
   self.time = progress * self.duration
   if math.abs(progress - self.progress) >= 0.000001 then self.progress = progress; self.dirty = true end
   return self

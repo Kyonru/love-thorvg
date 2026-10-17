@@ -1,0 +1,94 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 59a3799..64a879f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1789,7 +1789,16 @@ if(EMSCRIPTEN)
+ 		add_definitions("-s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=8 -s USE_SDL=2 -s FULL_ES2=1 -s INVOKE_RUN=0 --post-js ${CMAKE_CURRENT_SOURCE_DIR}/src/scripts/EmscriptenPersistence.js")
+ 	endif()
+ 
+-	add_executable(${LOVE_EXE_NAME} src/love.cpp)	
++	add_executable(${LOVE_EXE_NAME}
++		src/love.cpp
++		${LOVE_THORVG_ROOT}/web/love_thorvg_lua.cpp
++		${LOVE_THORVG_ROOT}/web/register_module.cpp
++	)
++	target_include_directories(${LOVE_EXE_NAME} PRIVATE
++		${LOVE_THORVG_ROOT}/include
++		${CMAKE_SOURCE_DIR}/libs/lua-5.1.5/src
++	)
++	target_link_options(${LOVE_EXE_NAME} PRIVATE "-Wl,--allow-multiple-definition")
+ 	set(EMSCRIPTEN_ARGS	
+ 		"-s CASE_INSENSITIVE_FS=1" # I think this is probably what most users expect (sorry linuxers)	
+ 		"--post-js ${CMAKE_CURRENT_SOURCE_DIR}/src/scripts/EmscriptenPersistence.js"	
+@@ -1813,7 +1822,12 @@ if(EMSCRIPTEN)
+ 		)
+ 	endif()
+ 
+-	target_link_libraries(${LOVE_EXE_NAME} ${LOVE_LIB_NAME} ${EMSCRIPTEN_ARGS})	
++	target_link_libraries(${LOVE_EXE_NAME}
++		${LOVE_LIB_NAME}
++		${LOVE_THORVG_LIBRARY}
++		${THORVG_LIBRARY}
++		${EMSCRIPTEN_ARGS}
++	)
+ else()
+ 	add_executable(${LOVE_EXE_NAME} WIN32 src/love.cpp ${LOVE_RC})
+ 	target_link_libraries(${LOVE_EXE_NAME} ${LOVE_LIB_NAME})
+diff --git a/src/love.cpp b/src/love.cpp
+index 435ac90..da2bef6 100644
+--- a/src/love.cpp
++++ b/src/love.cpp
+@@ -47,6 +47,7 @@ extern "C" {
+ 
+ #if LOVE_EMSCRIPTEN
+ #include <emscripten.h>
++extern "C" void love_thorvg_register_web_module(lua_State *L);
+ #endif
+ 
+ #ifdef LOVE_WINDOWS
+@@ -162,6 +163,10 @@ static DoneAction runlove(int argc, char **argv, int &retval)
+ 	lua_State *L = luaL_newstate();
+ 	luaL_openlibs(L);
+ 
++#if LOVE_EMSCRIPTEN
++	love_thorvg_register_web_module(L);
++#endif
++
+ 	// LuaJIT-specific setup needs to be done as early as possible - before
+ 	// get_app_arguments because that loads external library code. This is also
+ 	// loaded inside require("love"). Note that it doesn't use the love table.
+@@ -225,8 +230,9 @@ static DoneAction runlove(int argc, char **argv, int &retval)
+ 	lua_call(L, 1, 1);
+ 
+ 	// Turn the returned boot function into a coroutine and call it until done.
+-	lua_newthread(L);
++	lua_State *Lthread = lua_newthread(L);
+ 	lua_pushvalue(L, -2);
++	lua_xmove(L, Lthread, 1);
+ 	int nres;
+         #ifdef LOVE_EMSCRIPTEN
+         emscripten_set_main_loop_arg([](void *arg) {
+@@ -238,7 +244,7 @@ static DoneAction runlove(int argc, char **argv, int &retval)
+           } else {
+             emscripten_cancel_main_loop();
+ 			};
+-        }, (void *)L, 0, 1);
++        }, (void *)Lthread, 0, 1);
+ 	#else
+         int stackpos = lua_gettop(L);
+ 	while (love::luax_resume(L, 0, &nres) == LUA_YIELD)
+diff --git a/src/modules/event/sdl/Event_compat.cpp b/src/modules/event/sdl/Event_compat.cpp
+index a7cdf2e..d4783bf 100644
+--- a/src/modules/event/sdl/Event_compat.cpp
++++ b/src/modules/event/sdl/Event_compat.cpp
+@@ -131,7 +131,9 @@ void Event::pump()
+ 		}
+ 	}
+ 
+-	Module::getInstance<love::audio::openal::Audio>(Module::M_AUDIO)->pool->update();
++	auto audio = Module::getInstance<love::audio::openal::Audio>(Module::M_AUDIO);
++	if (audio != nullptr && audio->pool != nullptr)
++		audio->pool->update();
+ }
+ 
+ Message *Event::wait()

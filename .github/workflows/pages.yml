@@ -11,6 +11,7 @@ on:
       - "love_thorvg/**"
       - "examples/web/**"
       - "native/**"
+      - "scripts/build_web_example.sh"
       - "subprojects/**"
       - "web/**"
       - "tests/web_wasm_test.mjs"
@@ -42,32 +43,27 @@ jobs:
           cache: pip
           cache-dependency-path: requirements-docs.txt
 
-      - name: Install Zensical
-        run: python -m pip install -r requirements-docs.txt
+      - name: Install documentation and build tools
+        run: python -m pip install -r requirements-docs.txt meson ninja
 
       - name: Set up Emscripten
         uses: emscripten-core/setup-emsdk@v16
         with:
-          version: latest
+          version: "6.0.12"
 
-      - name: Install WebAssembly build tools
-        run: python -m pip install meson ninja
+      - name: Build the custom LÖVE runtime and example
+        run: ./scripts/build_web_example.sh build-lovejs web-proof
 
-      - name: Build and verify experimental WebAssembly backend
-        run: |
-          meson setup build-web --cross-file web/emscripten.ini -Dbuild_tests=false -Dweb_harness=true -Dthorvg:threads=false -Dthorvg:simd=false -Dthorvg:file=false --wrap-mode=forcefallback
-          meson compile -C build-web
-          node tests/web_wasm_test.mjs "$PWD/build-web/love_thorvg_web.js"
+      - name: Verify the WebAssembly core
+        run: node tests/web_wasm_test.mjs "$PWD/build-lovejs/core/love_thorvg_web.js"
 
       - name: Build site
         run: zensical build --clean --strict
 
-      - name: Add live WebAssembly proof
+      - name: Add the live LÖVE example
         run: |
           mkdir -p site/experimental/web-demo
-          cp examples/web/index.html examples/web/example.css examples/web/example.js site/experimental/web-demo/
-          cp -R examples/web/assets site/experimental/web-demo/assets
-          cp build-web/love_thorvg_web.js build-web/love_thorvg_web.wasm site/experimental/web-demo/
+          cp -R web-proof/. site/experimental/web-demo/
 
       - name: Configure Pages
         uses: actions/configure-pages@v6

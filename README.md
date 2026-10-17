@@ -20,9 +20,10 @@ also includes an `all-desktop` bundle for projects that package several targets,
 and a ready-to-use macOS ARM64 library.
 
 An [experimental web backend](https://kyonru.github.io/love-thorvg/experimental/web/)
-compiles the same ThorVG C ABI to WebAssembly. It currently requires a custom
-love.js build; see the [live proof](https://kyonru.github.io/love-thorvg/experimental/web-proof/)
-and the explicit support boundary before adopting it.
+builds a pinned, custom LÖVE runtime with ThorVG in the same WebAssembly module.
+The [live proof](https://kyonru.github.io/love-thorvg/experimental/web-proof/)
+runs real Lua callbacks and `love.graphics`; read the explicit support boundary
+before adopting it.
 
 Supported assets:
 
@@ -37,8 +38,8 @@ game directories and `.love` archives.
 ## Try the examples
 
 Run the [experimental WebAssembly example](https://kyonru.github.io/love-thorvg/experimental/web-demo/)
-in a browser to switch between repository Lottie examples rendered through
-the real ThorVG WASM backend. Its source and local build instructions live in
+in a browser to switch between repository Lottie examples from a real LÖVE
+game running on the ThorVG WASM backend. Its source and build instructions live in
 [`examples/web/`](examples/web/).
 
 On an Apple Silicon Mac with LÖVE installed in `/Applications`:

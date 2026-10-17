@@ -1,4 +1,6 @@
 /build/
+/build-lovejs/
+/dist/
 /.venv/
 /subprojects/packagecache/
 /subprojects/thorvg/
@@ -6,8 +8,13 @@
 /site/
 /examples/web/love_thorvg_web.js
 /examples/web/love_thorvg_web.wasm
+/examples/web/game.data
+/examples/web/game.js
+/examples/web/love.js
+/examples/web/love.wasm
 /.impeccable/hook.cache.json
 /.impeccable/config.local.json
 /.impeccable/review/
 *.dSYM/
+__pycache__/
 .DS_Store

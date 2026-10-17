@@ -2,9 +2,9 @@
 
 !!! warning "Experimental and not in the desktop release archives"
 
-    Web support requires a custom love.js build. The backend works, is tested in
-    WebAssembly, and keeps the public Lua API, but it is not yet a drop-in build
-    of LÖVE for browsers. Pin the exact toolchain and test your exported game.
+    Web support uses a custom, pinned love.js build. The repository builds and
+    tests that runtime end to end, but the backend is still experimental rather
+    than a general-purpose LÖVE browser distribution. Test your exported game.
 
 Stock browser ports of LÖVE use PUC Lua 5.1 rather than LuaJIT. That means the
 desktop adapter's FFI calls cannot work in a browser. `love-thorvg` solves this
@@ -33,7 +33,8 @@ image. No JavaScript bridge is involved during normal Lua rendering.
 - assets read through `love.filesystem`, including resolver callbacks for
   relative images and mapped fonts;
 - explicit release plus a userdata finalizer as a safety net;
-- automated Node proof and a live browser proof on the documentation site.
+- automated Node proof, an automated Chromium run of the real LÖVE game, and a
+  live browser example on the documentation site.
 
 Threads and SIMD are disabled in the first backend. Raster pixels cross one
 additional WASM-to-Lua string copy before becoming `ImageData`; size documents
@@ -56,12 +57,27 @@ node tests/web_wasm_test.mjs "$PWD/build-web/love_thorvg_web.js"
 ```
 
 This produces `love_thorvg_web.js` and `love_thorvg_web.wasm`. The harness is
-useful for testing the C ABI and the demo, but it is not a LÖVE runtime.
+useful for testing the C ABI in isolation, but it is not the published example.
+
+## Build the real LÖVE example
+
+With Emscripten 6.0.12, Meson, Ninja, and CMake available, run:
+
+```sh
+./scripts/build_web_example.sh
+python3 -m http.server 8000 --directory dist/web-example
+```
+
+The script checks out pinned LÖVE and megasource revisions, applies the small
+compatibility patch in `web/lovejs.patch`, builds ThorVG and LÖVE into one
+WebAssembly module, and packages `examples/web/game` with the Lua adapter and
+repository Lottie assets. Open `http://localhost:8000` to run it.
 
 ## Integrate it with love.js
 
-Use a source build of love.js with LuaJIT disabled, as required by that port.
-Add these translation units to its final Emscripten target:
+The automated build uses a source build of love.js with LuaJIT disabled, as
+required by that port. It adds these translation units to the final Emscripten
+target:
 
 ```text
 native/love_thorvg.cpp
@@ -88,7 +104,11 @@ translation unit that owns the Lua state.
 
 ## Current boundary
 
-This backend does not provide a maintained, prebuilt love.js distribution yet.
-Browser audio, input, persistence, packaging, and hosting remain responsibilities
-of the chosen LÖVE web runner. The [proof page](web-proof.md) distinguishes what
-the automated backend test proves from what still needs end-to-end runtime work.
+The example runtime is a reproducible proof build, not a maintained replacement
+for upstream LÖVE or a stable downloadable web SDK. It is single-threaded and
+disables audio, sound, joystick, physics, video, and thread modules. Keyboard, pointer,
+filesystem packaging, LÖVE callbacks, texture upload, and rendering are covered
+by the browser proof. Persistence, audio, performance on constrained devices,
+and broad browser compatibility still require more work.
+
+The [proof page](web-proof.md) records exactly what CI exercises.

@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#101c2a">
-  <title>love-thorvg · WebAssembly example</title>
+  <meta name="theme-color" content="#0a131d">
+  <title>love-thorvg · LÖVE web example</title>
   <link rel="stylesheet" href="example.css">
 </head>
 <body>
@@ -15,59 +15,48 @@
 
   <main>
     <section class="intro" aria-labelledby="page-title">
-      <div class="intro-copy">
-        <h1 id="page-title">Vector artwork,<br><em>alive in the browser.</em></h1>
-        <p>Choose artwork from the repository’s Lottie examples and scrub every frame yourself. ThorVG decodes and rasterizes it inside WebAssembly—no prerecorded canvas frames.</p>
-      </div>
-      <dl class="runtime" aria-label="Runtime details">
-        <div><dt>Renderer</dt><dd>ThorVG CPU</dd></div>
-        <div><dt>Target</dt><dd>WASM32</dd></div>
-        <div><dt>Formats</dt><dd>SVG + Lottie</dd></div>
-      </dl>
+      <p class="eyebrow">LÖVE 11.x · Lua · Lottie · ThorVG</p>
+      <h1 id="page-title">The real LÖVE loop,<br><em>running in your browser.</em></h1>
+      <p class="lede">This is a packaged LÖVE game—not a JavaScript recreation. Its <code>main.lua</code> requires <code>love_thorvg</code>, loads artwork through <code>love.filesystem</code>, and draws each ThorVG texture with <code>love.graphics</code>.</p>
     </section>
 
-    <section class="workbench" aria-label="Live WebAssembly rendering example">
-      <div class="stage-wrap">
-        <div class="stage" id="stage" aria-label="Lottie example rendered by ThorVG WebAssembly">
-          <canvas id="svg-layer" width="560" height="560"></canvas>
-          <canvas id="lottie-layer" width="560" height="560"></canvas>
-          <div class="stage-readout" aria-hidden="true">
-            <span>document → pixels → canvas</span>
-            <strong id="frame-readout">frame 000</strong>
-          </div>
+    <section class="runner" aria-label="Interactive LÖVE web example">
+      <div class="canvas-frame">
+        <canvas id="canvas" width="720" height="720" tabindex="0" aria-label="LÖVE game rendering repository Lottie examples"></canvas>
+        <div class="loading" id="loading" aria-hidden="true">
+          <span></span>
+          Booting LÖVE…
         </div>
       </div>
-
-      <div class="console">
-        <div class="live-line">
-          <span class="pulse" aria-hidden="true"></span>
-          <span id="status" role="status" aria-live="polite">Loading WebAssembly…</span>
-        </div>
-
-        <div class="asset-picker">
-          <label for="asset">Example artwork</label>
-          <select id="asset" disabled>
-            <option value="relax">Relax</option>
-            <option value="turkey">Thanksgiving Turkey</option>
-          </select>
-        </div>
-
-        <div class="timeline">
-          <label for="progress">Timeline <output id="progress-output" for="progress">0%</output></label>
-          <input id="progress" type="range" min="0" max="1000" value="0" aria-label="Animation progress">
-        </div>
-
-        <div class="controls">
-          <button id="play" type="button" disabled>Pause</button>
-          <button id="restart" type="button" disabled>Restart</button>
-        </div>
-
-        <p class="technical-note">This browser example calls the exported love-thorvg C ABI directly. The experimental LÖVE adapter uses the same ABI through a statically linked Lua 5.1 module.</p>
-        <a class="source-link" href="https://github.com/Kyonru/love-thorvg/tree/main/examples/web">Read the example source <span aria-hidden="true">→</span></a>
+      <div class="proof-bar">
+        <p id="status" role="status" aria-live="polite" data-love-ready="false">Loading the custom runtime…</p>
+        <p id="asset-status">Waiting for Lua</p>
       </div>
     </section>
+
+    <section class="notes" aria-label="Runtime details">
+      <div>
+        <span>Game code</span>
+        <strong>love.load · love.update · love.draw</strong>
+      </div>
+      <div>
+        <span>Backend</span>
+        <strong>Lua 5.1 module · one WASM memory</strong>
+      </div>
+      <div>
+        <span>Artwork</span>
+        <strong>Relax · Thanksgiving Turkey</strong>
+      </div>
+    </section>
+
+    <footer>
+      <p>Use the buttons in the game, or press <kbd>←</kbd> <kbd>→</kbd> to switch artwork, <kbd>Space</kbd> to pause, and <kbd>R</kbd> to restart.</p>
+      <a href="https://github.com/Kyonru/love-thorvg/tree/main/examples/web">Read the Lua example <span aria-hidden="true">→</span></a>
+    </footer>
   </main>
 
-  <script type="module" src="example.js"></script>
+  <script src="example.js"></script>
+  <script src="game.js"></script>
+  <script src="love.js"></script>
 </body>
 </html>
