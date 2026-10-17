@@ -10,16 +10,13 @@
 <body>
   <header class="site-header">
     <a class="brand" href="https://github.com/Kyonru/love-thorvg">love-thorvg</a>
-    <span class="experiment">Experimental web backend</span>
+    <div class="header-meta">
+      <span class="experiment">Experimental</span>
+      <a href="https://kyonru.github.io/love-thorvg/experimental/web/">Source &amp; setup</a>
+    </div>
   </header>
 
   <main>
-    <section class="intro" aria-labelledby="page-title">
-      <p class="eyebrow">LÖVE 11.x · Lua · Lottie · ThorVG</p>
-      <h1 id="page-title">The real LÖVE loop,<br><em>running in your browser.</em></h1>
-      <p class="lede">This is a packaged LÖVE game—not a JavaScript recreation. Its <code>main.lua</code> requires <code>love_thorvg</code>, loads artwork through <code>love.filesystem</code>, and draws each ThorVG texture with <code>love.graphics</code>.</p>
-    </section>
-
     <section class="runner" aria-label="Interactive LÖVE web example">
       <div class="canvas-frame">
         <canvas id="canvas" width="720" height="720" tabindex="0" aria-label="LÖVE game rendering repository Lottie examples"></canvas>
@@ -33,26 +30,6 @@
         <p id="asset-status">Waiting for Lua</p>
       </div>
     </section>
-
-    <section class="notes" aria-label="Runtime details">
-      <div>
-        <span>Game code</span>
-        <strong>love.load · love.update · love.draw</strong>
-      </div>
-      <div>
-        <span>Backend</span>
-        <strong>Lua 5.1 module · one WASM memory</strong>
-      </div>
-      <div>
-        <span>Artwork</span>
-        <strong>Relax · Thanksgiving Turkey</strong>
-      </div>
-    </section>
-
-    <footer>
-      <p>Use the buttons in the game, or press <kbd>←</kbd> <kbd>→</kbd> to switch artwork, <kbd>Space</kbd> to pause, and <kbd>R</kbd> to restart.</p>
-      <a href="https://github.com/Kyonru/love-thorvg/tree/main/examples/web">Read the Lua example <span aria-hidden="true">→</span></a>
-    </footer>
   </main>
 
   <script src="example.js"></script>
