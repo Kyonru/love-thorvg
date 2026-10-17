@@ -19,6 +19,11 @@ python3 -m http.server 8000 --directory dist/web-example
 Open `http://localhost:8000`. The build writes generated JavaScript, WASM, and
 game data under `dist/web-example`; those outputs are not committed.
 
+To package your own game with this runtime, follow the
+[web setup guide](https://kyonru.github.io/love-thorvg/experimental/web/#set-up-web-support).
+It covers the required `conf.lua` module settings, virtual-filesystem mappings,
+local serving, and static-host deployment.
+
 The initial backend is intentionally single-threaded and disables audio. Web
 support remains experimental while browser input, persistence, performance,
 and compatibility receive broader testing.

@@ -47,6 +47,160 @@ runtime. It loads Lottie artwork shared with the native examples, advances it
 in `love.update`, draws it in `love.draw`, and accepts keyboard input to switch
 assets.
 
+## Set up web support
+
+Web support is not a drop-in addition to a stock love.js build. The
+`love_thorvg_web` Lua C module and ThorVG must be compiled into the LÖVE
+WebAssembly runtime. Use the repository's pinned build first; only maintain a
+custom love.js integration if you need to change that runtime.
+
+### 1. Install the build tools
+
+You need Git, CMake, Python, Meson, Ninja, and Emscripten 6.0.12. One way to
+install and activate the pinned Emscripten SDK is:
+
+```sh
+git clone https://github.com/emscripten-core/emsdk.git
+cd emsdk
+./emsdk install 6.0.12
+./emsdk activate 6.0.12
+source ./emsdk_env.sh
+python3 -m pip install meson ninja
+```
+
+Run `source emsdk_env.sh` in each new shell before building. Confirm that
+`emcmake`, `em++`, `cmake`, `meson`, and `ninja` are on `PATH`.
+
+### 2. Build the custom runtime
+
+From a love-thorvg checkout, run:
+
+```sh
+./scripts/build_web_example.sh build-lovejs dist/web-example
+```
+
+The first build clones the pinned LÖVE and megasource revisions and can take
+several minutes. It produces a working example in `dist/web-example` and keeps
+the reusable build tree in `build-lovejs`.
+
+!!! note "Use the complete generated runtime"
+
+    Do not replace its `love.js` or `love.wasm` with files from another love.js
+    release. The generated pair contains the statically linked ThorVG backend,
+    Lua module registration, and compatibility fixes.
+
+### 3. Prepare your game
+
+Keep normal LÖVE entry points in one directory and require love-thorvg exactly
+as on desktop:
+
+```text
+my-game/
+├── conf.lua
+├── main.lua
+└── assets/
+    ├── artwork.json
+    └── icon.svg
+```
+
+```lua
+local thorvg = require('love_thorvg')
+local artwork
+
+function love.load()
+  artwork = thorvg.new('assets/artwork.json', {
+    width = 512,
+    height = 512,
+    autoplay = true,
+    loop = true,
+  })
+  local major, minor, revision = love.getVersion()
+  print(('LOVE_THORVG_READY LOVE=%d.%d.%d OS=%s ABI=2'):format(
+    major, minor, revision, love.system.getOS()))
+end
+
+function love.update(dt)
+  artwork:update(dt)
+end
+
+function love.draw()
+  artwork:draw(0, 0)
+end
+
+function love.quit()
+  artwork:release()
+end
+```
+
+The initial runtime excludes several LÖVE modules. Disable them in `conf.lua`
+so game startup does not request unavailable features:
+
+```lua
+function love.conf(t)
+  t.modules.audio = false
+  t.modules.joystick = false
+  t.modules.physics = false
+  t.modules.sound = false
+  t.modules.thread = false
+  t.modules.video = false
+end
+```
+
+All SVG, Lottie, image, and font paths remain relative to LÖVE's virtual
+filesystem. Put those files inside the game directory so the packager can
+include them. The `LOVE_THORVG_READY` line is only a handshake for the supplied
+HTML loading state; keep it when reusing `example.js`, or replace that loading
+logic with your own.
+
+### 4. Package your game
+
+Start with the generated example shell, then replace its example game package:
+
+```sh
+cp -R dist/web-example dist/my-game
+
+emscripten_dir=$(dirname "$(command -v em++)")
+"$emscripten_dir/tools/file_packager.py" "$PWD/dist/my-game/game.data" \
+  --preload "$PWD/path/to/my-game@/" \
+  --preload "$PWD/love_thorvg/init.lua@/love_thorvg/init.lua" \
+  --preload "$PWD/love_thorvg/view.lua@/love_thorvg/view.lua" \
+  --preload "$PWD/love_thorvg/web.lua@/love_thorvg/web.lua" \
+  --js-output="$PWD/dist/my-game/game.js"
+```
+
+The `@/` mapping places `main.lua`, `conf.lua`, and the game's assets at the
+root of LÖVE's virtual filesystem. The other mappings install the Lua adapter
+where `require('love_thorvg')` expects it.
+
+Re-run only this packaging command after changing Lua or assets. Re-run
+`build_web_example.sh` when love-thorvg C++, ThorVG, the pinned runtime, or the
+Emscripten version changes.
+
+### 5. Test and publish
+
+Serve the output over HTTP; opening `index.html` through `file://` will not
+load WebAssembly correctly:
+
+```sh
+python3 -m http.server 8000 --directory dist/my-game
+```
+
+Open `http://localhost:8000`. The publish directory must contain:
+
+```text
+index.html       example.css     example.js
+game.data        game.js         love.js
+love.wasm
+```
+
+Upload those files together to any static host. The host must serve
+`love.wasm` as `application/wasm`; keep the generated relative URLs intact, and
+serve `game.data`, `game.js`, `love.js`, and `love.wasm` from the same origin.
+If you customize the page shell, define its `Module` object and canvas before
+loading `game.js` and `love.js`, in that order. GitHub Pages works with this
+layout. The repository's
+`.github/workflows/pages.yml` is a complete CI example.
+
 ## Build the verified WebAssembly core
 
 Install Emscripten, Meson, and Ninja, then run:
@@ -65,20 +219,6 @@ node tests/web_wasm_test.mjs "$PWD/build-web/love_thorvg_web.js"
 
 This produces `love_thorvg_web.js` and `love_thorvg_web.wasm`. The harness is
 useful for testing the C ABI in isolation, but it is not the published example.
-
-## Build the real LÖVE example
-
-With Emscripten 6.0.12, Meson, Ninja, and CMake available, run:
-
-```sh
-./scripts/build_web_example.sh
-python3 -m http.server 8000 --directory dist/web-example
-```
-
-The script checks out pinned LÖVE and megasource revisions, applies the small
-compatibility patch in `web/lovejs.patch`, builds ThorVG and LÖVE into one
-WebAssembly module, and packages `examples/web/game` with the Lua adapter and
-repository Lottie assets. Open `http://localhost:8000` to run it.
 
 ## Integrate it with love.js
 
