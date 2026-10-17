@@ -46,7 +46,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes liblua5.1-0-dev
-          em++ -std=c++17 -fsyntax-only web/love_thorvg_lua.cpp web/register_module.cpp -Iinclude -I/usr/include/lua5.1
+          c++ -std=c++17 -fsyntax-only web/love_thorvg_lua.cpp web/register_module.cpp -Iinclude -I/usr/include/lua5.1
       - name: Build WebAssembly proof
         run: >-
           meson setup build-web
