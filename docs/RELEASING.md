@@ -1,7 +1,8 @@
 # Releasing
 
 Releases are built and published by
-[`release.yml`](../.github/workflows/release.yml). Pushing a tag named
+[`release.yml`](https://github.com/Kyonru/love-thorvg/blob/main/.github/workflows/release.yml).
+Pushing a tag named
 `v<major>.<minor>.<patch>` builds and tests the native library on macOS ARM64,
 macOS x64, Linux x64, and Windows x64. The workflow packages one ZIP for each
 target and creates a GitHub release with generated notes after every build
@@ -10,7 +11,8 @@ succeeds.
 ## Prepare a release
 
 1. Set the release version in `meson.build`.
-2. Add a dated entry for the same version to `CHANGELOG.md`.
+2. Add a dated entry for the same version to
+   [`CHANGELOG.md`](https://github.com/Kyonru/love-thorvg/blob/main/CHANGELOG.md).
 3. Run the release metadata check and the local build:
 
    ```sh

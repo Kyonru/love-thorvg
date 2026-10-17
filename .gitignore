@@ -3,5 +3,6 @@
 /subprojects/packagecache/
 /subprojects/thorvg/
 /subprojects/.wraplock
+/site/
 *.dSYM/
 .DS_Store

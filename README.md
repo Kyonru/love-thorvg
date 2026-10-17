@@ -1,6 +1,7 @@
 # love-thorvg
 
 [![Native artifacts](https://github.com/Kyonru/love-thorvg/actions/workflows/quality.yml/badge.svg)](https://github.com/Kyonru/love-thorvg/actions/workflows/quality.yml)
+[![Documentation](https://github.com/Kyonru/love-thorvg/actions/workflows/pages.yml/badge.svg)](https://kyonru.github.io/love-thorvg/)
 [![Release](https://github.com/Kyonru/love-thorvg/actions/workflows/release.yml/badge.svg)](https://github.com/Kyonru/love-thorvg/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-20c9b5.svg)](LICENSE)
 
@@ -180,7 +181,8 @@ upload. This is a practical fit for several UI animations, but not hundreds of
 large animations updating every frame. Reuse document instances, keep output
 dimensions close to their displayed size, and call `release()` when finished.
 
-See [docs/API.md](docs/API.md) for the complete API and
+Read the [documentation](https://kyonru.github.io/love-thorvg/) for setup,
+assets, examples, performance guidance, and the complete API. See
 [CHANGELOG.md](CHANGELOG.md) for release notes.
 
 ## Contributing

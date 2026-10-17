@@ -1,0 +1,77 @@
+[project]
+site_url = "https://kyonru.github.io/love-thorvg/"
+site_name = "love-thorvg"
+site_description = "SVG and Lottie rendering for LÖVE 11.x, powered by ThorVG"
+site_author = "love-thorvg contributors"
+repo_url = "https://github.com/Kyonru/love-thorvg"
+repo_name = "Kyonru/love-thorvg"
+edit_uri = "edit/main/docs/"
+docs_dir = "docs"
+site_dir = "site"
+extra_css = ["stylesheets/extra.css"]
+nav = [
+  { "Overview" = "index.md" },
+  { "Get started" = [
+    { "Quick start" = "getting-started/quick-start.md" },
+    { "Assets and fonts" = "guides/assets.md" },
+  ] },
+  { "Build with it" = [
+    { "Examples" = "guides/examples.md" },
+    { "Performance" = "reference/performance.md" },
+  ] },
+  { "Reference" = [
+    { "Lua API" = "API.md" },
+    { "GPU backend investigation" = "GPU_BACKENDS.md" },
+  ] },
+  { "Project" = [
+    { "Releasing" = "RELEASING.md" },
+  ] },
+]
+
+[project.theme]
+language = "en"
+font = false
+features = [
+  "content.code.copy",
+  "content.code.select",
+  "content.tooltips",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.instant",
+  "navigation.path",
+  "navigation.sections",
+  "navigation.top",
+  "navigation.tracking",
+  "search.highlight",
+  "toc.follow",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "custom"
+accent = "custom"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions]
+admonition = {}
+attr_list = {}
+md_in_html = {}
+pymdownx.details = {}
+pymdownx.highlight.anchor_linenums = true
+pymdownx.highlight.line_spans = "__span"
+pymdownx.highlight.pygments_lang_class = true
+pymdownx.superfences.custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+pymdownx.tabbed.alternate_style = true
+toc.permalink = true

@@ -120,6 +120,20 @@ settles without shifting the base map or causing a ThorVG raster/upload spike.
 Pause the map with Space, then use an arrow and Enter; keyboard selection must
 resume and complete the spring rather than freezing its first frame.
 
+## Documentation
+
+The documentation site uses Zensical. Install the pinned dependency and run a
+strict local build from the repository root:
+
+```sh
+.venv/bin/pip install -r requirements-docs.txt
+.venv/bin/zensical build --clean --strict
+```
+
+Generated files are written to `site/` and are not committed. Changes pushed
+to `main` under `docs/`, `zensical.toml`, or the documentation workflow deploy
+automatically to GitHub Pages.
+
 Example assets need an entry in that example's `assets/LICENSE.md`. Link the
 local file and its original source page, name the applicable license, and record
 the creator when known. If the source or license cannot be verified, say so and
