@@ -55,6 +55,7 @@ emcmake cmake -S "$megasource_dir" -B "$runtime_build_dir" \
   -DMEGA_LOVE="$love_dir" \
   -DLOVE_JIT=0 \
   -DLOVE_MPG123=FALSE \
+  -DLUA_BUILD_STATIC=ON \
   -DLOVEJS_COMPAT=1 \
   -DLOVE_THORVG_ROOT="$repo_root" \
   -DLOVE_THORVG_LIBRARY="$core_build_dir/liblove_thorvg.a" \
