@@ -1,0 +1,14 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 3cb5c79..d1e8a90 100755
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -228,6 +228,9 @@ message(STATUS "Configuring: freetype ${MEGA_FREETYPE_VER}")
+ message(STATUS "-----------------------------------------------------")
+ add_subdirectory("libs/freetype-${MEGA_FREETYPE_VER}" ${CMAKE_BINARY_DIR}/freetype)
+ set(MEGA_FREETYPE freetype)
++if(EMSCRIPTEN)
++  set_property(TARGET freetype PROPERTY POSITION_INDEPENDENT_CODE ON)
++endif()
+ 
+ ## try compiling with native SDL, emscripten documentation says compatibility
+ ## changes have been made with the upstream source

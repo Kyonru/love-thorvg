@@ -39,6 +39,14 @@ if ! git -C "$love_dir" apply --ignore-space-change --check "$repo_root/web/love
 else
   git -C "$love_dir" apply --ignore-space-change "$repo_root/web/lovejs.patch"
 fi
+if ! git -C "$megasource_dir" apply --ignore-space-change --check "$repo_root/web/megasource.patch" 2>/dev/null; then
+  git -C "$megasource_dir" apply --ignore-space-change --reverse --check "$repo_root/web/megasource.patch" >/dev/null 2>&1 || {
+    echo "The pinned megasource patch does not apply cleanly." >&2
+    exit 1
+  }
+else
+  git -C "$megasource_dir" apply --ignore-space-change "$repo_root/web/megasource.patch"
+fi
 
 if [[ ! -f "$core_build_dir/build.ninja" ]]; then
   meson setup "$core_build_dir" "$repo_root" \
@@ -59,7 +67,6 @@ emcmake cmake -S "$megasource_dir" -B "$runtime_build_dir" \
   -DLOVE_THORVG_ROOT="$repo_root" \
   -DLOVE_THORVG_LIBRARY="$core_build_dir/liblove_thorvg.a" \
   -DTHORVG_LIBRARY="$core_build_dir/subprojects/thorvg/src/libthorvg-1.a" \
-  -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_POLICY_VERSION_MINIMUM=3.5
 cmake --build "$runtime_build_dir" --target love --parallel
