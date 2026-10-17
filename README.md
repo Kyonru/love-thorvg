@@ -1,5 +1,9 @@
 # love-thorvg
 
+[![Native artifacts](https://github.com/Kyonru/love-thorvg/actions/workflows/quality.yml/badge.svg)](https://github.com/Kyonru/love-thorvg/actions/workflows/quality.yml)
+[![Release](https://github.com/Kyonru/love-thorvg/actions/workflows/release.yml/badge.svg)](https://github.com/Kyonru/love-thorvg/actions/workflows/release.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-20c9b5.svg)](LICENSE)
+
 Render SVG and Lottie animations in **LÖVE 11.x** with ThorVG. `love-thorvg`
 loads assets through `love.filesystem`, renders them into a reusable texture,
 and only redraws when animation progress or output size changes.
@@ -9,8 +13,9 @@ icons, loaders, onboarding animation, and other modest animation workloads.
 
 ## Availability
 
-The repository currently includes a ready-to-use macOS ARM64 library. Windows,
-Linux, and Intel macOS packages are planned but are not distributed yet.
+[GitHub releases](https://github.com/Kyonru/love-thorvg/releases) provide tested
+packages for macOS ARM64, macOS x64, Linux x64, and Windows x64. The repository
+also includes a ready-to-use macOS ARM64 library.
 
 Supported assets:
 
@@ -53,7 +58,9 @@ and recording the available source and licensing information.
 
 ## Install
 
-Copy the complete `love_thorvg/` directory into your game:
+Download the archive for your platform from the
+[release page](https://github.com/Kyonru/love-thorvg/releases), then copy the
+complete `love_thorvg/` directory into your game:
 
 ```text
 my-game/
@@ -173,7 +180,8 @@ upload. This is a practical fit for several UI animations, but not hundreds of
 large animations updating every frame. Reuse document instances, keep output
 dimensions close to their displayed size, and call `release()` when finished.
 
-See [docs/API.md](docs/API.md) for the complete API.
+See [docs/API.md](docs/API.md) for the complete API and
+[CHANGELOG.md](CHANGELOG.md) for release notes.
 
 ## Contributing
 

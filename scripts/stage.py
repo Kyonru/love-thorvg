@@ -37,6 +37,10 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("build_dir", type=Path)
     parser.add_argument("output_dir", type=Path)
+    parser.add_argument(
+        "--version",
+        help="optional release tag included in the archive name (for example v0.1.0)",
+    )
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parent.parent
@@ -45,7 +49,11 @@ def main() -> None:
     if not matches:
         raise SystemExit(f"could not find {library_name} under {args.build_dir}")
 
-    package_name = f"love-thorvg-{system}-{architecture}"
+    name_parts = ["love-thorvg"]
+    if args.version:
+        name_parts.append(args.version)
+    name_parts.extend((system, architecture))
+    package_name = "-".join(name_parts)
     package = args.output_dir / package_name
     native = package / "love_thorvg" / "native" / f"{system}-{architecture}"
     native.mkdir(parents=True, exist_ok=True)
@@ -55,6 +63,7 @@ def main() -> None:
     shutil.copy2(matches[0], native / library_name)
     shutil.copy2(root / "README.md", package / "README.md")
     shutil.copy2(root / "LICENSE", package / "LICENSE")
+    shutil.copy2(root / "subprojects" / "thorvg" / "LICENSE", package / "THORVG-LICENSE")
     shutil.make_archive(str(args.output_dir / package_name), "zip", args.output_dir, package_name)
     print(args.output_dir / f"{package_name}.zip")
 

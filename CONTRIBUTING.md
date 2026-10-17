@@ -203,6 +203,12 @@ commit `build/`, `.venv/`, the downloaded `subprojects/thorvg/` checkout, or
 Meson's package cache. Commit a staged native library only when intentionally
 updating a distributed platform artifact.
 
+## Releases
+
+Versioned releases are built for all supported targets from `v*` tags. See
+[docs/RELEASING.md](docs/RELEASING.md) for the preparation checklist, tag
+workflow, artifact layout, and recovery guidance.
+
 ## Roadmap
 
 - [x] CI-built release artifacts for macOS ARM64/x64, Windows x64, and Linux x64
