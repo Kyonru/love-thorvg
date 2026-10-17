@@ -35,8 +35,8 @@ jobs:
   proof:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - uses: emscripten-core/setup-emsdk@v16
@@ -67,7 +67,7 @@ jobs:
           mkdir web-proof
           cp examples/web/index.html examples/web/example.css examples/web/example.js web-proof/
           cp build-web/love_thorvg_web.js build-web/love_thorvg_web.wasm web-proof/
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: experimental-web-proof
           path: web-proof
