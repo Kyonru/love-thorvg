@@ -6,6 +6,7 @@ on:
     paths:
       - "include/**"
       - "love_thorvg/**"
+      - "examples/web/**"
       - "native/**"
       - "subprojects/**"
       - "tests/web_wasm_test.mjs"
@@ -17,6 +18,7 @@ on:
     paths:
       - "include/**"
       - "love_thorvg/**"
+      - "examples/web/**"
       - "native/**"
       - "subprojects/**"
       - "tests/web_wasm_test.mjs"
@@ -63,7 +65,7 @@ jobs:
       - name: Stage browser proof
         run: |
           mkdir web-proof
-          cp web/demo/* web-proof/
+          cp examples/web/index.html examples/web/example.css examples/web/example.js web-proof/
           cp build-web/love_thorvg_web.js build-web/love_thorvg_web.wasm web-proof/
       - uses: actions/upload-artifact@v4
         with:

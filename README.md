@@ -36,6 +36,11 @@ game directories and `.love` archives.
 
 ## Try the examples
 
+Run the [experimental WebAssembly example](https://kyonru.github.io/love-thorvg/experimental/web-demo/)
+in a browser to see an SVG dial and interactive Lottie orbit rendered through
+the real ThorVG WASM backend. Its source and local build instructions live in
+[`examples/web/`](examples/web/).
+
 On an Apple Silicon Mac with LÖVE installed in `/Applications`:
 
 ```sh

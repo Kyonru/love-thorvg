@@ -4,7 +4,10 @@
 /subprojects/thorvg/
 /subprojects/.wraplock
 /site/
+/examples/web/love_thorvg_web.js
+/examples/web/love_thorvg_web.wasm
 /.impeccable/hook.cache.json
 /.impeccable/config.local.json
+/.impeccable/review/
 *.dSYM/
 .DS_Store

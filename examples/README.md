@@ -1,5 +1,11 @@
 # Examples
 
+## Experimental web
+
+[`web/`](web/) renders an SVG dial and an interactive Lottie orbit through the
+real WebAssembly C ABI. It includes browser playback, restart, and timeline
+scrubbing controls, plus reproducible local build instructions.
+
 ## Asset browser
 
 [`asset-browser/`](asset-browser/) is the quickest API tour. It loads several

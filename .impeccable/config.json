@@ -26,6 +26,15 @@
         ],
         "createdAt": "2026-10-17T01:04:27.771Z",
         "reason": "False positive: the only uppercase treatment is the short experimental-status eyebrow label; paragraph body copy remains sentence case."
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          "examples/web/index.html"
+        ],
+        "createdAt": "2026-10-17T01:10:36.400Z",
+        "reason": "False positive: the workbench uses intentional split-panel borders and a full-bleed canvas; all text-bearing children have generous internal padding and the stage readout is inset."
       }
     ]
   }

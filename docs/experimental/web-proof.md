@@ -1,10 +1,16 @@
 # Web proof
 
-The [live WebAssembly demo](/love-thorvg/experimental/web-demo/) loads the generated module in the browser
-and animates a Lottie document by rasterizing every frame with ThorVG. Its status
-line reports the live C ABI version and animation duration.
+The [live WebAssembly example](/love-thorvg/experimental/web-demo/) loads the
+generated module in the browser, decodes an SVG instrument face, and animates a
+Lottie orbit by rasterizing every frame with ThorVG. Its status line reports
+the live C ABI version and document details; playback and scrubbing are interactive.
 
-[Open the live proof](/love-thorvg/experimental/web-demo/){ .md-button .md-button--primary }
+[Run the web example](/love-thorvg/experimental/web-demo/){ .md-button .md-button--primary }
+
+<video controls muted loop playsinline preload="metadata" style="width: 100%;" aria-label="Recording of the love-thorvg WebAssembly example rendering and scrubbing a Lottie animation">
+  <source src="/love-thorvg/assets/web-example.mp4" type="video/mp4">
+  Your browser does not support embedded video. <a href="/love-thorvg/assets/web-example.mp4">Download the recording</a>.
+</video>
 
 ## Automated evidence
 

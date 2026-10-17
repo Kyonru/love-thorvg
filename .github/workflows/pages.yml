@@ -9,6 +9,7 @@ on:
       - "requirements-docs.txt"
       - "include/**"
       - "love_thorvg/**"
+      - "examples/web/**"
       - "native/**"
       - "subprojects/**"
       - "web/**"
@@ -64,7 +65,7 @@ jobs:
       - name: Add live WebAssembly proof
         run: |
           mkdir -p site/experimental/web-demo
-          cp web/demo/* site/experimental/web-demo/
+          cp examples/web/index.html examples/web/example.css examples/web/example.js site/experimental/web-demo/
           cp build-web/love_thorvg_web.js build-web/love_thorvg_web.wasm site/experimental/web-demo/
 
       - name: Configure Pages

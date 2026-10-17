@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101c2a">
+  <title>love-thorvg · WebAssembly example</title>
+  <link rel="stylesheet" href="example.css">
+</head>
+<body>
+  <header class="site-header">
+    <a class="brand" href="https://github.com/Kyonru/love-thorvg">love-thorvg</a>
+    <span class="experiment">Experimental web backend</span>
+  </header>
+
+  <main>
+    <section class="intro" aria-labelledby="page-title">
+      <div class="intro-copy">
+        <h1 id="page-title">Vector artwork,<br><em>alive in the browser.</em></h1>
+        <p>Two real documents are decoded below: an SVG instrument face and a Lottie orbit. ThorVG rasterizes both inside WebAssembly—no prerecorded canvas frames.</p>
+      </div>
+      <dl class="runtime" aria-label="Runtime details">
+        <div><dt>Renderer</dt><dd>ThorVG CPU</dd></div>
+        <div><dt>Target</dt><dd>WASM32</dd></div>
+        <div><dt>Formats</dt><dd>SVG + Lottie</dd></div>
+      </dl>
+    </section>
+
+    <section class="workbench" aria-label="Live WebAssembly rendering example">
+      <div class="stage-wrap">
+        <div class="stage" id="stage" aria-label="SVG dial and animated Lottie particles rendered by ThorVG">
+          <canvas id="svg-layer" width="560" height="560"></canvas>
+          <canvas id="lottie-layer" width="560" height="560"></canvas>
+          <div class="stage-readout" aria-hidden="true">
+            <span>document → pixels → canvas</span>
+            <strong id="frame-readout">frame 000</strong>
+          </div>
+        </div>
+      </div>
+
+      <div class="console">
+        <div class="live-line">
+          <span class="pulse" aria-hidden="true"></span>
+          <span id="status" role="status" aria-live="polite">Loading WebAssembly…</span>
+        </div>
+
+        <div class="timeline">
+          <label for="progress">Timeline <output id="progress-output" for="progress">0%</output></label>
+          <input id="progress" type="range" min="0" max="1000" value="0" aria-label="Animation progress">
+        </div>
+
+        <div class="controls">
+          <button id="play" type="button" disabled>Pause</button>
+          <button id="restart" type="button" disabled>Restart</button>
+        </div>
+
+        <p class="technical-note">This browser example calls the exported love-thorvg C ABI directly. The experimental LÖVE adapter uses the same ABI through a statically linked Lua 5.1 module.</p>
+        <a class="source-link" href="https://github.com/Kyonru/love-thorvg/tree/main/examples/web">Read the example source <span aria-hidden="true">→</span></a>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="example.js"></script>
+</body>
+</html>
