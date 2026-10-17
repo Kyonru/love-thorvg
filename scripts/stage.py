@@ -7,6 +7,7 @@ import argparse
 import platform
 import shutil
 import sys
+import zipfile
 from pathlib import Path
 
 
@@ -45,16 +46,30 @@ def main() -> None:
 
     root = Path(__file__).resolve().parent.parent
     system, architecture, library_name = target()
-    matches = [path for path in args.build_dir.rglob(library_name) if path.is_file()]
+    build_dir = args.build_dir.resolve()
+    output_dir = args.output_dir.resolve()
+    matches = [path for path in build_dir.rglob(library_name) if path.is_file()]
+    if not matches and system == "windows":
+        matches = [
+            path
+            for path in build_dir.rglob(f"*{library_name}")
+            if path.is_file()
+        ]
     if not matches:
-        raise SystemExit(f"could not find {library_name} under {args.build_dir}")
+        candidates = sorted(
+            str(path.relative_to(build_dir))
+            for path in build_dir.rglob("*love_thorvg*")
+            if path.is_file()
+        )
+        detail = f"; candidates: {', '.join(candidates)}" if candidates else ""
+        raise SystemExit(f"could not find {library_name} under {build_dir}{detail}")
 
     name_parts = ["love-thorvg"]
     if args.version:
         name_parts.append(args.version)
     name_parts.extend((system, architecture))
     package_name = "-".join(name_parts)
-    package = args.output_dir / package_name
+    package = output_dir / package_name
     native = package / "love_thorvg" / "native" / f"{system}-{architecture}"
     native.mkdir(parents=True, exist_ok=True)
 
@@ -63,9 +78,19 @@ def main() -> None:
     shutil.copy2(matches[0], native / library_name)
     shutil.copy2(root / "README.md", package / "README.md")
     shutil.copy2(root / "LICENSE", package / "LICENSE")
-    shutil.copy2(root / "subprojects" / "thorvg" / "LICENSE", package / "THORVG-LICENSE")
-    shutil.make_archive(str(args.output_dir / package_name), "zip", args.output_dir, package_name)
-    print(args.output_dir / f"{package_name}.zip")
+    thorvg_license = root / "subprojects" / "thorvg" / "LICENSE"
+    if not thorvg_license.is_file():
+        thorvg_license = build_dir / "subprojects" / "thorvg" / "LICENSE"
+    if not thorvg_license.is_file():
+        raise SystemExit("could not find the ThorVG license in the source or build tree")
+    shutil.copy2(thorvg_license, package / "THORVG-LICENSE")
+
+    archive = output_dir / f"{package_name}.zip"
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
+        for path in sorted(package.rglob("*")):
+            if path.is_file():
+                output.write(path, path.relative_to(output_dir))
+    print(archive)
 
 
 if __name__ == "__main__":
