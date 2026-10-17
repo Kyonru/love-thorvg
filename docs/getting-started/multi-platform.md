@@ -29,5 +29,5 @@ WebAssembly architecture.
 To reproduce the bundle from downloaded release assets:
 
 ```sh
-python3 scripts/combine_packages.py downloads dist --version v0.1.0
+python3 scripts/combine_packages.py downloads dist --version v0.2.0
 ```

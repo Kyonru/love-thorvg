@@ -16,7 +16,7 @@ creates a GitHub release with generated notes after every build succeeds.
 3. Run the release metadata check and the local build:
 
    ```sh
-   python3 scripts/check_release.py v0.1.0
+   python3 scripts/check_release.py v0.2.0
    PATH="$PWD/.venv/bin:$PATH" ./scripts/build.sh
    ```
 
@@ -30,9 +30,9 @@ checks all three before doing a native build.
 Create an annotated tag on the prepared commit and push it:
 
 ```sh
-git tag -a v0.1.0 -m "love-thorvg v0.1.0"
+git tag -a v0.2.0 -m "love-thorvg v0.2.0"
 git push origin main
-git push origin v0.1.0
+git push origin v0.2.0
 ```
 
 The tag push is the publication trigger. Do not create the GitHub release by

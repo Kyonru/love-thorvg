@@ -151,7 +151,7 @@ uint32_t love_thorvg_abi_version(void)
 
 const char* love_thorvg_version(void)
 {
-    return "0.1.0";
+    return "0.2.0";
 }
 
 int love_thorvg_document_create(const void* data, size_t size, const char* mime_type,
