@@ -58,6 +58,13 @@ try {
   assert(messages.some((line) => line.includes('LOVE_THORVG_ASSET Relax 151')));
   assert(messages.some((line) => line.includes('LOVE_THORVG_ASSET Thanksgiving Turkey 60')));
   console.log('PASS: LÖVE ran Lua callbacks and animated ThorVG Lottie textures in Chromium.');
+} catch (error) {
+  console.error('Browser console output:\n' + (messages.join('\n') || '(none)'));
+  console.error('Browser errors:\n' + (errors.join('\n') || '(none)'));
+  if (screenshotPath) {
+    await page.screenshot({path: screenshotPath, fullPage: true}).catch(() => {});
+  }
+  throw error;
 } finally {
   await browser.close();
   await new Promise((accept) => server.close(accept));

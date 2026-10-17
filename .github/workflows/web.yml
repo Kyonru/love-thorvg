@@ -64,9 +64,10 @@ jobs:
       - name: Run the LÖVE game in Chromium
         run: node tests/web_love_test.mjs web-proof web-proof.png
       - uses: actions/upload-artifact@v7
+        if: always()
         with:
           name: experimental-web-proof
           path: |
             web-proof
             web-proof.png
-          if-no-files-found: error
+          if-no-files-found: warn
