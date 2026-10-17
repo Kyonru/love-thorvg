@@ -89,8 +89,21 @@ h1 em { color: var(--mint); font-weight: inherit; }
 .live-line { display: flex; align-items: center; gap: 0.7rem; min-height: 1.5rem; color: var(--mint); font: 0.82rem/1.4 "SFMono-Regular", Consolas, monospace; }
 .pulse { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: var(--coral); }
 
-.timeline { margin: 3rem 0 1.5rem; }
+.asset-picker { margin-top: 2.5rem; }
+.asset-picker label,
 .timeline label { display: flex; justify-content: space-between; margin-bottom: 0.85rem; color: var(--muted); font-size: 0.84rem; }
+.asset-picker select {
+  width: 100%;
+  padding: 0.75rem 2.5rem 0.75rem 0.85rem;
+  border: 1px solid var(--rule);
+  border-radius: 0.75rem;
+  color: var(--paper);
+  background: var(--ink-deep);
+  font: inherit;
+  cursor: pointer;
+}
+.asset-picker select:disabled { cursor: wait; opacity: 0.45; }
+.timeline { margin: 1.5rem 0; }
 .timeline output { color: var(--paper); font-family: "SFMono-Regular", Consolas, monospace; font-variant-numeric: tabular-nums; }
 input[type="range"] { width: 100%; accent-color: var(--mint); cursor: pointer; }
 
@@ -109,7 +122,7 @@ button {
 button + button { color: var(--paper); background: transparent; border-color: var(--rule); }
 button:hover:not(:disabled) { border-color: var(--coral); }
 button:disabled { cursor: wait; opacity: 0.45; }
-button:focus-visible, input:focus-visible, a:focus-visible { outline: 3px solid var(--coral); outline-offset: 4px; }
+button:focus-visible, input:focus-visible, select:focus-visible, a:focus-visible { outline: 3px solid var(--coral); outline-offset: 4px; }
 
 .technical-note { margin: 3rem 0 1.25rem; color: var(--muted); font-size: 0.86rem; line-height: 1.65; }
 .source-link { width: fit-content; color: var(--paper); text-decoration-color: var(--cyan); text-decoration-thickness: 1px; text-underline-offset: 0.35em; }

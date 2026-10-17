@@ -1,9 +1,10 @@
 # Web proof
 
 The [live WebAssembly example](/love-thorvg/experimental/web-demo/) loads the
-generated module in the browser, decodes an SVG instrument face, and animates a
-Lottie orbit by rasterizing every frame with ThorVG. Its status line reports
-the live C ABI version and document details; playback and scrubbing are interactive.
+generated module in the browser, decodes an SVG backdrop, and animates Lottie
+artwork shared with the native examples by rasterizing every frame with ThorVG.
+Its status line reports the live C ABI version and document details; playback
+and scrubbing are interactive.
 
 [Run the web example](/love-thorvg/experimental/web-demo/){ .md-button .md-button--primary }
 

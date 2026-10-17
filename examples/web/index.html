@@ -17,7 +17,7 @@
     <section class="intro" aria-labelledby="page-title">
       <div class="intro-copy">
         <h1 id="page-title">Vector artwork,<br><em>alive in the browser.</em></h1>
-        <p>Two real documents are decoded below: an SVG instrument face and a Lottie orbit. ThorVG rasterizes both inside WebAssembly—no prerecorded canvas frames.</p>
+        <p>Choose artwork from the repository’s Lottie examples and scrub every frame yourself. ThorVG decodes and rasterizes it inside WebAssembly—no prerecorded canvas frames.</p>
       </div>
       <dl class="runtime" aria-label="Runtime details">
         <div><dt>Renderer</dt><dd>ThorVG CPU</dd></div>
@@ -28,7 +28,7 @@
 
     <section class="workbench" aria-label="Live WebAssembly rendering example">
       <div class="stage-wrap">
-        <div class="stage" id="stage" aria-label="SVG dial and animated Lottie particles rendered by ThorVG">
+        <div class="stage" id="stage" aria-label="Lottie example rendered by ThorVG WebAssembly">
           <canvas id="svg-layer" width="560" height="560"></canvas>
           <canvas id="lottie-layer" width="560" height="560"></canvas>
           <div class="stage-readout" aria-hidden="true">
@@ -42,6 +42,14 @@
         <div class="live-line">
           <span class="pulse" aria-hidden="true"></span>
           <span id="status" role="status" aria-live="polite">Loading WebAssembly…</span>
+        </div>
+
+        <div class="asset-picker">
+          <label for="asset">Example artwork</label>
+          <select id="asset" disabled>
+            <option value="relax">Relax</option>
+            <option value="turkey">Thanksgiving Turkey</option>
+          </select>
         </div>
 
         <div class="timeline">

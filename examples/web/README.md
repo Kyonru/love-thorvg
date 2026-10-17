@@ -1,8 +1,9 @@
 # WebAssembly example
 
-This experimental browser example decodes an SVG dial and a Lottie animation,
-then rasterizes both through the real love-thorvg WebAssembly C ABI. Play,
-pause, restart, and scrub the Lottie timeline from the browser UI.
+This experimental browser example decodes an SVG backdrop and two animations
+shared with the repository's Lottie examples, then rasterizes them through the
+real love-thorvg WebAssembly C ABI. Switch artwork, play, pause, restart, and
+scrub the Lottie timeline from the browser UI.
 
 Build the WebAssembly harness from the repository root:
 
