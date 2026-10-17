@@ -4,5 +4,7 @@
 /subprojects/thorvg/
 /subprojects/.wraplock
 /site/
+/.impeccable/hook.cache.json
+/.impeccable/config.local.json
 *.dSYM/
 .DS_Store

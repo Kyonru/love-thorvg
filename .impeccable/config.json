@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "arial",
+        "createdAt": "2026-10-17T00:45:07.787Z",
+        "reason": "Agent: detector matched the Arial substring inside the intentional Arial Rounded MT Bold display face, not generic Arial"
+      }
+    ]
+  }
+}

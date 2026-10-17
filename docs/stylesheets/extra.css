@@ -163,12 +163,14 @@
 
 .lt-card {
   padding: 1.2rem 1.25rem;
-  border-left: 3px solid var(--lt-mint);
+  border: 1px solid color-mix(in srgb, var(--md-default-fg-color) 14%, transparent);
+  border-radius: 0.35rem;
   background: color-mix(in srgb, var(--md-code-bg-color) 58%, transparent);
 }
 
-.lt-card:nth-child(2) { border-left-color: var(--lt-coral); }
-.lt-card:nth-child(3) { border-left-color: var(--lt-cyan); }
+.lt-card:nth-child(1) .lt-card__label { color: var(--lt-mint); }
+.lt-card:nth-child(2) .lt-card__label { color: var(--lt-coral); }
+.lt-card:nth-child(3) .lt-card__label { color: var(--lt-cyan); }
 .lt-card h3 { margin: 0.25rem 0 0.65rem; }
 .lt-card p:last-child { margin-bottom: 0; }
 
