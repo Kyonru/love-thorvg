@@ -40,6 +40,13 @@ Threads and SIMD are disabled in the first backend. Raster pixels cross one
 additional WASM-to-Lua string copy before becoming `ImageData`; size documents
 conservatively and use frame caching for repeatedly visited frames.
 
+[Run the live LÖVE example](/love-thorvg/experimental/web-demo/){ .md-button .md-button--primary }
+
+The example executes `examples/web/game/main.lua` in the custom browser
+runtime. It loads Lottie artwork shared with the native examples, advances it
+in `love.update`, draws it in `love.draw`, and accepts keyboard input to switch
+assets.
+
 ## Build the verified WebAssembly core
 
 Install Emscripten, Meson, and Ninja, then run:
@@ -102,6 +109,29 @@ Keep all three C++ files and ThorVG in the final link. If dead-code elimination
 removes the registration function, explicitly export or call it from the same
 translation unit that owns the Lua state.
 
+## Automated verification
+
+Every web-backend build runs two complementary checks. The low-level Node test
+in `tests/web_wasm_test.mjs`:
+
+1. instantiates the Emscripten module and checks ABI version 2;
+2. decodes an SVG from bytes and verifies its rendered RGBA pixels;
+3. decodes a Lottie document, checks its timeline metadata, renders progress
+   `0.5`, and verifies non-transparent output; and
+4. prints stable SHA-256 prefixes for both rendered buffers.
+
+The browser test in `tests/web_love_test.mjs` then starts the packaged game in
+headless Chromium. It waits for a marker printed by Lua, verifies LÖVE reports
+`OS=Web`, compares two canvas captures to prove the Lottie animation advances,
+sends an Arrow Right event, and waits for Lua to load the Thanksgiving Turkey
+asset. Page errors and console errors fail the run.
+
+Together these tests cover the pinned `wasm32` build, SVG and Lottie decoding,
+PUC Lua 5.1 startup, automatic backend selection, `love.filesystem` reads,
+ThorVG-to-LÖVE texture upload, animation, drawing, and browser input. Successful
+GitHub Actions runs also publish the built HTML, JavaScript, WASM, and screenshot
+as the `experimental-web-proof` workflow artifact.
+
 ## Current boundary
 
 The example runtime is a reproducible proof build, not a maintained replacement
@@ -110,5 +140,3 @@ disables audio, sound, joystick, physics, video, and thread modules. Keyboard, p
 filesystem packaging, LÖVE callbacks, texture upload, and rendering are covered
 by the browser proof. Persistence, audio, performance on constrained devices,
 and broad browser compatibility still require more work.
-
-The [proof page](web-proof.md) records exactly what CI exercises.

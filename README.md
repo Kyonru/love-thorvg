@@ -21,9 +21,9 @@ and a ready-to-use macOS ARM64 library.
 
 An [experimental web backend](https://kyonru.github.io/love-thorvg/experimental/web/)
 builds a pinned, custom LÖVE runtime with ThorVG in the same WebAssembly module.
-The [live proof](https://kyonru.github.io/love-thorvg/experimental/web-proof/)
+Its [live example](https://kyonru.github.io/love-thorvg/experimental/web-demo/)
 runs real Lua callbacks and `love.graphics`; read the explicit support boundary
-before adopting it.
+in the web-backend guide before adopting it.
 
 Supported assets:
 
