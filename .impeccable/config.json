@@ -17,6 +17,15 @@
         ],
         "createdAt": "2026-10-17T00:54:21.751Z",
         "reason": "False positive: the card uses a uniform 1px neutral border on all four sides, not a colored side-tab accent."
+      },
+      {
+        "rule": "all-caps-body",
+        "value": "*",
+        "files": [
+          "web/demo/index.html"
+        ],
+        "createdAt": "2026-10-17T01:04:27.771Z",
+        "reason": "False positive: the only uppercase treatment is the short experimental-status eyebrow label; paragraph body copy remains sentence case."
       }
     ]
   }
