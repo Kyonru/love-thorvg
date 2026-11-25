@@ -165,7 +165,7 @@ local title = thorvg.new('assets/title.svg', {
 })
 ```
 
-Font preloading is not in the published v0.2.0 binaries. See the
+Font preloading is included in the v0.3.0 desktop binaries. See the
 [font guide](docs/guides/assets.md) for ownership, custom resolvers, and limitations.
 
 ## UI integration

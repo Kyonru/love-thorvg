@@ -46,7 +46,7 @@ jobs:
           cp love_thorvg/*.lua build/love-font-test/love_thorvg/
           cp build/liblove_thorvg.so build/love-font-test/love_thorvg/native/linux-x64/
           timeout 60s xvfb-run -a love build/love-font-test
-      - run: python -m unittest tests.test_combine_packages
+      - run: python -m unittest tests.test_combine_packages tests.test_stage
       - run: python scripts/stage.py build dist
       - uses: actions/upload-artifact@v7
         with:
