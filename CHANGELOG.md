@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Preload explicitly mapped SVG fonts on desktop before parsing documents.
+- Expose `capabilities.svgFonts`, and report unsupported binaries or missing fonts.
+- Share identical font data across live documents and reject conflicting family registrations.
+- Add native text rendering, ownership, and failed-load cleanup tests.
+
 ## v0.2.0 — 2026-10-16
 
 This release brings `love-thorvg` to the browser and makes installation and

@@ -19,6 +19,11 @@ int love_thorvg_document_create_with_resolver(const void* data, size_t size,
   const char* mime_type, const char* resource_path, unsigned threads,
   love_thorvg_asset_resolver resolver, void* resolver_user_data,
   love_thorvg_document** out_document, char* error, size_t error_capacity);
+int love_thorvg_document_create_with_fonts(const void* data, size_t size,
+  const char* mime_type, const char* resource_path, unsigned threads,
+  love_thorvg_asset_resolver resolver, void* resolver_user_data,
+  const char* const* font_names, size_t font_count,
+  love_thorvg_document** out_document, char* error, size_t error_capacity);
 void love_thorvg_document_destroy(love_thorvg_document* document);
 int love_thorvg_document_render(love_thorvg_document* document, uint32_t* rgba_pixels,
   uint32_t width, uint32_t height, uint32_t stride_pixels, float progress,
@@ -82,6 +87,7 @@ end
 
 local native = loadNative()
 assert(native.love_thorvg_abi_version() == 2, 'love-thorvg native ABI mismatch')
+local supportsSvgFonts, createWithFonts = pcall(function() return native.love_thorvg_document_create_with_fonts end)
 
 local Document = {}
 Document.__index = Document
@@ -394,6 +400,7 @@ end
 
 local M = {
   _VERSION = ffi.string(native.love_thorvg_version()),
+  capabilities = {svgFonts = supportsSvgFonts},
 }
 
 function M.new(path, options)
@@ -404,12 +411,33 @@ function M.new(path, options)
 
   local ext = extension(path)
   local mimeType = options.mimeType or mimeTypes[ext] or ext
+  local fontNames, fontPointers = {}, nil
+  if mimeType == 'svg' or mimeType == 'image/svg+xml' then
+    assert(options.fonts == nil or type(options.fonts) == 'table', 'fonts must map font families to asset paths')
+    for name, fontPath in pairs(options.fonts or {}) do
+      assert(type(name) == 'string' and name ~= '' and not name:find('%z'), 'invalid font family')
+      assert(type(fontPath) == 'string' and fontPath ~= '', 'font paths must be nonempty strings')
+      fontNames[#fontNames + 1] = name
+    end
+    table.sort(fontNames)
+    if #fontNames > 0 then
+      assert(supportsSvgFonts, 'SVG font preloading requires an updated love-thorvg native library')
+      fontPointers = ffi.new('const char*[?]', #fontNames)
+      for i, name in ipairs(fontNames) do fontPointers[i - 1] = name end
+    end
+  end
   local output = ffi.new('love_thorvg_document*[1]')
   local errorBuffer = ffi.new('char[512]')
   local assetCallback = makeAssetResolver(path, options)
-  local result = native.love_thorvg_document_create_with_resolver(
-    bytes, #bytes, mimeType, options.resourcePath or '', options.threads or 0,
-    assetCallback, nil, output, errorBuffer, 512)
+  local result
+  if fontPointers then
+    result = createWithFonts(bytes, #bytes, mimeType, options.resourcePath or '', options.threads or 0,
+      assetCallback, nil, fontPointers, #fontNames, output, errorBuffer, 512)
+  else
+    result = native.love_thorvg_document_create_with_resolver(
+      bytes, #bytes, mimeType, options.resourcePath or '', options.threads or 0,
+      assetCallback, nil, output, errorBuffer, 512)
+  end
   if result ~= 0 then
     assetCallback:free()
     error(nativeError(errorBuffer, 'ThorVG load failed for ' .. path), 2)
@@ -446,9 +474,12 @@ function M.new(path, options)
     playing = options.autoplay ~= false,
     dirty = true,
   }, Document)
-  allocateTarget(self, options.width or math.max(1, math.floor(intrinsicWidth + 0.5)),
-    options.height or math.max(1, math.floor(intrinsicHeight + 0.5)))
-  self:setProgress(options.progress or 0)
+  local ok, err = pcall(function()
+    allocateTarget(self, options.width or math.max(1, math.floor(intrinsicWidth + 0.5)),
+      options.height or math.max(1, math.floor(intrinsicHeight + 0.5)))
+    self:setProgress(options.progress or 0)
+  end)
+  if not ok then self:release(); error(err, 2) end
   return self
 end
 

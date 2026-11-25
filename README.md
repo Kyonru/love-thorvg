@@ -30,7 +30,8 @@ Supported assets:
 - SVG files;
 - Lottie JSON files;
 - embedded or relative PNG images inside Lottie files;
-- external Lottie fonts with an explicit family-to-path mapping.
+- external Lottie fonts with an explicit family-to-path mapping;
+- explicitly supplied SVG fonts on desktop builds with `capabilities.svgFonts`.
 
 Relative assets are loaded through `love.filesystem`, so they work from normal
 game directories and `.love` archives.
@@ -143,6 +144,20 @@ local logo = thorvg.new('assets/logo.svg', {
   autoplay = false,
 })
 ```
+
+For SVG text, use an updated desktop native build and supply an exact family
+mapping before loading the document:
+
+```lua
+assert(thorvg.capabilities and thorvg.capabilities.svgFonts)
+local title = thorvg.new('assets/title.svg', {
+  assetRoot = '',
+  fonts = {Inter = 'fonts/Inter-Regular.ttf'},
+})
+```
+
+Font preloading is not in the published v0.2.0 binaries. See the
+[font guide](docs/guides/assets.md) for ownership, custom resolvers, and limitations.
 
 ## UI integration
 
