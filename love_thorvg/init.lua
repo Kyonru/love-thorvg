@@ -8,6 +8,14 @@ local ffi = require('ffi')
 
 ffi.cdef [[
 typedef struct love_thorvg_document love_thorvg_document;
+int love_thorvg_document_element_bounds(
+    love_thorvg_document* document, const char* id, float* xywh,
+    char* error, size_t error_capacity);
+int love_thorvg_document_set_element(
+    love_thorvg_document* document, const char* id, const float* abcdef,
+    float opacity, char* error, size_t error_capacity);
+
+
 typedef size_t (*love_thorvg_asset_resolver)(const char* source, int asset_type,
   void* buffer, size_t capacity, void* user_data);
 uint32_t love_thorvg_abi_version(void);
@@ -87,6 +95,7 @@ end
 
 local native = loadNative()
 assert(native.love_thorvg_abi_version() == 2, 'love-thorvg native ABI mismatch')
+local supportsSvgElements = pcall(function() return native.love_thorvg_document_set_element end)
 local supportsSvgFonts, createWithFonts = pcall(function() return native.love_thorvg_document_create_with_fonts end)
 
 local Document = {}
@@ -229,6 +238,36 @@ local function allocateTarget(self, width, height)
     self.image = nil
   end
   self.dirty = true
+end
+
+-- Element edits are explicit; CSS animation is not interpreted by ThorVG.
+function Document:getElementBounds(id)
+  assert(self.handle ~= nil, 'document has been released')
+  assert(supportsSvgElements, 'SVG element editing requires love-thorvg 0.3.0')
+  assert(type(id) == 'string' and id ~= '' and not id:find('%z'), 'expected an SVG element ID')
+  local bounds, err = ffi.new('float[4]'), ffi.new('char[512]')
+  local result = native.love_thorvg_document_element_bounds(self.handle, id, bounds, err, 512)
+  if result ~= 0 then error(nativeError(err, 'SVG bounds failed'), 2) end
+  return tonumber(bounds[0]), tonumber(bounds[1]), tonumber(bounds[2]), tonumber(bounds[3])
+end
+
+function Document:setElement(id, matrix, opacity)
+  assert(self.handle ~= nil, 'document has been released')
+  assert(supportsSvgElements, 'SVG element editing requires love-thorvg 0.3.0')
+  assert(type(id) == 'string' and id ~= '' and not id:find('%z'), 'expected an SVG element ID')
+  assert(type(matrix) == 'table' and #matrix == 6, 'expected SVG matrix {a,b,c,d,e,f}')
+  opacity = opacity == nil and 1 or opacity
+  assert(type(opacity) == 'number' and opacity >= 0 and opacity <= 1, 'opacity must be in [0, 1]')
+  for i = 1, 6 do
+    assert(type(matrix[i]) == 'number' and matrix[i] == matrix[i] and math.abs(matrix[i]) < math.huge,
+      'matrix entries must be finite numbers')
+  end
+  local values, err = ffi.new('float[6]', matrix), ffi.new('char[512]')
+  local result = native.love_thorvg_document_set_element(self.handle, id, values, opacity, err, 512)
+  if result ~= 0 then error(nativeError(err, 'SVG element update failed'), 2) end
+  releaseFrameCache(self)
+  self.dirty = true
+  return self
 end
 
 function Document:setProgress(progress)
@@ -400,7 +439,7 @@ end
 
 local M = {
   _VERSION = ffi.string(native.love_thorvg_version()),
-  capabilities = {svgFonts = supportsSvgFonts},
+  capabilities = {svgFonts = supportsSvgFonts, svgElements = supportsSvgElements},
 }
 
 function M.new(path, options)

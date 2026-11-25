@@ -223,3 +223,11 @@ in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 `love-thorvg` is MIT licensed. Distributed builds include ThorVG and must retain
 its license notices.
+
+### SVG element animation
+
+Desktop version 0.3.0 can edit named SVG elements without reloading a document.
+Use `Document:getElementBounds(id)` and `Document:setElement(id, {a,b,c,d,e,f}, opacity)`
+to drive transforms and opacity from your own timeline. Check
+`capabilities.svgElements`; see [the API guide](docs/API.md) for coordinate and
+SVG `<use>` limitations. CSS animation is not interpreted.

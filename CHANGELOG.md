@@ -1,6 +1,11 @@
 # Changelog
 
-## Unreleased
+## v0.3.0 — 2026-11-25
+
+- Add desktop SVG element transforms, opacity, and parent-space bounds by ID.
+- Update every matching instance, including named wrappers around SVG use instances, without reloading the document.
+- Expose `capabilities.svgElements`, `Document:setElement`, and `Document:getElementBounds`.
+- Invalidate cached frames after element edits while reusing the upload texture.
 
 - Preload explicitly mapped SVG fonts on desktop before parsing documents.
 - Expose `capabilities.svgFonts`, and report unsupported binaries or missing fonts.
