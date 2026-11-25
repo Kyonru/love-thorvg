@@ -2,6 +2,9 @@
 
 ## v0.3.0 — 2026-11-25
 
+- Update the bundled engine from an earlier 1.2.0 development snapshot to stable ThorVG 1.1.4.
+- Document the ThorVG release, immutable source pin, and engine responsibilities in the README.
+
 - Add desktop SVG element transforms, opacity, and parent-space bounds by ID.
 - Update every matching instance, including named wrappers around SVG use instances, without reloading the document.
 - Expose `capabilities.svgElements`, `Document:setElement`, and `Document:getElementBounds`.

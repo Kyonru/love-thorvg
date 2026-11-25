@@ -5,12 +5,21 @@
 [![Release](https://github.com/Kyonru/love-thorvg/actions/workflows/release.yml/badge.svg)](https://github.com/Kyonru/love-thorvg/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-20c9b5.svg)](LICENSE)
 
-Render SVG and Lottie animations in **LÖVE 11.x** with ThorVG. `love-thorvg`
+Render SVG and Lottie animations in **LÖVE 11.x** with [ThorVG](https://www.thorvg.org/), the MIT-licensed vector graphics engine. `love-thorvg`
 loads assets through `love.filesystem`, renders them into a reusable texture,
 and only redraws when animation progress or output size changes.
 
 It works without a custom LÖVE build and is designed for UI illustrations,
 icons, loaders, onboarding animation, and other modest animation workloads.
+
+## Bundled ThorVG
+
+love-thorvg **0.3.0** bundles stable [ThorVG **1.1.4**](https://github.com/thorvg/thorvg/releases/tag/v1.1.4),
+pinned to commit [`47658a80842f3b3182aded036190edf459beabe7`](https://github.com/thorvg/thorvg/commit/47658a80842f3b3182aded036190edf459beabe7).
+ThorVG supplies SVG/Lottie parsing and CPU vector rasterization; love-thorvg
+provides LÖVE filesystem integration, playback, reusable textures, and the Lua API.
+Desktop archives include the engine and its license; no separate ThorVG install
+is needed. The reproducible source pin lives in `subprojects/thorvg.wrap`.
 
 ## Availability
 

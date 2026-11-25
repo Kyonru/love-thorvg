@@ -311,7 +311,7 @@ int love_thorvg_document_create_with_fonts(
     }
 
     if (resolver) {
-        result = tvg_picture_set_asset_resolver(document->picture, resolve_asset, document);
+        result = tvg_picture_set_asset_resolver(document->picture, resolve_asset, document, false);
         if (!succeeded(result)) {
             set_error(error, error_capacity, "setting asset resolver", result);
             love_thorvg_document_destroy(document);
