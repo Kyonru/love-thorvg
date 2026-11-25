@@ -65,7 +65,7 @@ family is rejected. Release all owners before replacing that family's data.
 A custom resolver receives `name:<family>` with kind `font` for these mappings.
 
 This is an additive native API; update both the Lua wrapper and native binary.
-The published v0.2.0 binary and experimental web backend do not preload SVG fonts.
+The v0.3.0 desktop binaries preload explicitly mapped SVG fonts. The experimental web backend does not.
 `capabilities.svgFonts` lets integrations check support without guessing from the
 version string. Existing Lottie mappings continue to work.
 

@@ -99,3 +99,30 @@ local animation = thorvg.new('ui/success.json', {
 Use `assetResolver` for aliases, generated data, archives, or another virtual
 asset source. Resolver data is copied by the native layer before the callback
 returns.
+
+## Desktop SVG element editing (0.3.0)
+
+Check `thorvg.capabilities.svgElements` before using these methods. They allow
+an application to run its own animation timeline; they do not interpret CSS.
+
+```lua
+local x, y, width, height = document:getElementBounds('head')
+document:setElement('head', {1, 0, 0, 1, 12, 0}, 0.8)
+document:draw(0, 0)
+```
+
+`getElementBounds(id)` returns the first matching element's axis-aligned bounds
+in its parent's coordinate system, including its current local transform but
+excluding stroke width (SVG fill-box geometry). Measure resting bounds before editing or transforming the element.
+`setElement(id, matrix, opacity)` replaces the local transform with the SVG
+`{a,b,c,d,e,f}` matrix and sets opacity in `[0,1]` (default `1`). It updates all
+matching IDs present in the loaded scene, invalidates cached frames, and marks
+the document dirty. The normal uncached path reuses its ImageData and texture.
+Missing IDs, nonfinite values, and released documents report errors.
+
+Use a named `<g>` wrapper for each animated part. ThorVG may discard IDs within
+`<use>` clones or prune initially hidden elements, so inline animated content,
+or put the ID on a wrapper around the `<use>`. Load content visibly and apply
+its starting opacity after loading if it must animate from fully transparent.
+The experimental web backend reports `svgElements = false`; these methods are
+desktop-only. Lottie playback remains unchanged.

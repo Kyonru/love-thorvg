@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## v0.3.0 — 2026-11-25
+
+- Update the bundled ThorVG 1.2.0-dev snapshot to November 25 commit `7793957774e5b494c07ac77cf555789ce3ae059c`.
+- Document the ThorVG release, immutable source pin, and engine responsibilities in the README.
+
+- Add desktop SVG element transforms, opacity, and parent-space bounds by ID.
+- Update every matching instance, including named wrappers around SVG use instances, without reloading the document.
+- Expose `capabilities.svgElements`, `Document:setElement`, and `Document:getElementBounds`.
+- Invalidate cached frames after element edits while reusing the upload texture.
 
 - Preload explicitly mapped SVG fonts on desktop before parsing documents.
 - Expose `capabilities.svgFonts`, and report unsupported binaries or missing fonts.

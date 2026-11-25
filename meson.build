@@ -1,7 +1,7 @@
 project(
   'love-thorvg',
   'cpp',
-  version: '0.2.0',
+  version: '0.3.0',
   default_options: ['cpp_std=c++17', 'warning_level=3'],
   meson_version: '>=1.3.0',
 )
@@ -54,6 +54,8 @@ if get_option('build_tests') and not is_web
     include_directories: include_directories('include'),
   )
   test('native API', native_test)
+  element_test = executable('element-test', 'tests/element_test.cpp', link_with: love_thorvg_library, include_directories: include_directories('include'))
+  test('SVG element editing', element_test)
   font_test = executable(
     'font-test',
     'tests/font_test.cpp',

@@ -226,7 +226,7 @@ function Document:release()
   if self.imageData then self.imageData:release(); self.imageData = nil end
 end
 
-local M = {_VERSION = native.version(), _EXPERIMENTAL_WEB = true, Document = Document, capabilities = {svgFonts = false}}
+local M = {_VERSION = native.version(), _EXPERIMENTAL_WEB = true, Document = Document, capabilities = {svgFonts = false, svgElements = false}}
 
 function M.new(path, options)
   assert(love and love.filesystem and love.image and love.graphics, 'love-thorvg must run inside LÖVE')

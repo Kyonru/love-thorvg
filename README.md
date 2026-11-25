@@ -5,12 +5,21 @@
 [![Release](https://github.com/Kyonru/love-thorvg/actions/workflows/release.yml/badge.svg)](https://github.com/Kyonru/love-thorvg/actions/workflows/release.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-20c9b5.svg)](LICENSE)
 
-Render SVG and Lottie animations in **LÖVE 11.x** with ThorVG. `love-thorvg`
+Render SVG and Lottie animations in **LÖVE 11.x** with [ThorVG](https://www.thorvg.org/), the MIT-licensed vector graphics engine. `love-thorvg`
 loads assets through `love.filesystem`, renders them into a reusable texture,
 and only redraws when animation progress or output size changes.
 
 It works without a custom LÖVE build and is designed for UI illustrations,
 icons, loaders, onboarding animation, and other modest animation workloads.
+
+## Bundled ThorVG
+
+love-thorvg **0.3.0** bundles [ThorVG **1.2.0-dev**](https://github.com/thorvg/thorvg), a development snapshot from November 25, 2026,
+pinned to commit [`7793957774e5b494c07ac77cf555789ce3ae059c`](https://github.com/thorvg/thorvg/commit/7793957774e5b494c07ac77cf555789ce3ae059c).
+ThorVG supplies SVG/Lottie parsing and CPU vector rasterization; love-thorvg
+provides LÖVE filesystem integration, playback, reusable textures, and the Lua API.
+Desktop archives include the engine and its license; no separate ThorVG install
+is needed. This is not a stable ThorVG release. The reproducible source pin lives in `subprojects/thorvg.wrap`.
 
 ## Availability
 
@@ -156,7 +165,7 @@ local title = thorvg.new('assets/title.svg', {
 })
 ```
 
-Font preloading is not in the published v0.2.0 binaries. See the
+Font preloading is included in the v0.3.0 desktop binaries. See the
 [font guide](docs/guides/assets.md) for ownership, custom resolvers, and limitations.
 
 ## UI integration
@@ -223,3 +232,11 @@ in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 `love-thorvg` is MIT licensed. Distributed builds include ThorVG and must retain
 its license notices.
+
+### SVG element animation
+
+Desktop version 0.3.0 can edit named SVG elements without reloading a document.
+Use `Document:getElementBounds(id)` and `Document:setElement(id, {a,b,c,d,e,f}, opacity)`
+to drive transforms and opacity from your own timeline. Check
+`capabilities.svgElements`; see [the API guide](docs/API.md) for coordinate and
+SVG `<use>` limitations. CSS animation is not interpreted.

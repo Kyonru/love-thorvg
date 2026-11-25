@@ -28,6 +28,7 @@ struct love_thorvg_document {
     void* resolver_user_data = nullptr;
     std::string asset_error;
     std::vector<std::string> loaded_fonts;
+    std::map<std::string, std::vector<Tvg_Paint>> elements;
 };
 
 namespace {
@@ -198,6 +199,40 @@ int apply_transform(love_thorvg_document* document, uint32_t width, uint32_t hei
     return LOVE_THORVG_OK;
 }
 
+
+struct ElementSearch {
+    uint32_t id;
+    std::vector<Tvg_Paint> paints;
+    bool failed = false;
+};
+
+const std::vector<Tvg_Paint>& find_elements(love_thorvg_document* document, const char* id)
+{
+    auto found = document->elements.find(id);
+    if (found != document->elements.end()) return found->second;
+    ElementSearch search{tvg_accessor_generate_id(id), {}, false};
+    auto accessor = tvg_accessor_new();
+    if (!accessor) throw std::bad_alloc();
+    const auto result = tvg_accessor_set(accessor, document->picture, [](Tvg_Paint paint, void* data) {
+        auto* search = static_cast<ElementSearch*>(data);
+        if (tvg_paint_get_id(paint) == search->id) {
+            try { search->paints.push_back(paint); }
+            catch (...) { search->failed = true; return false; }
+        }
+        return true;
+    }, &search);
+    tvg_accessor_del(accessor);
+    if (search.failed) throw std::bad_alloc();
+    if (!succeeded(result)) search.paints.clear();
+    return document->elements.emplace(id, std::move(search.paints)).first->second;
+}
+
+int element_error(char* error, size_t capacity, const char* message)
+{
+    if (error && capacity) std::snprintf(error, capacity, "%s", message);
+    return LOVE_THORVG_INVALID_ARGUMENT;
+}
+
 }  // namespace
 
 extern "C" {
@@ -209,7 +244,7 @@ uint32_t love_thorvg_abi_version(void)
 
 const char* love_thorvg_version(void)
 {
-    return "0.2.0";
+    return "0.3.0";
 }
 
 int love_thorvg_document_create(const void* data, size_t size, const char* mime_type,
@@ -276,7 +311,7 @@ int love_thorvg_document_create_with_fonts(
     }
 
     if (resolver) {
-        result = tvg_picture_set_asset_resolver(document->picture, resolve_asset, document);
+        result = tvg_picture_set_asset_resolver(document->picture, resolve_asset, document, false);
         if (!succeeded(result)) {
             set_error(error, error_capacity, "setting asset resolver", result);
             love_thorvg_document_destroy(document);
@@ -284,6 +319,7 @@ int love_thorvg_document_create_with_fonts(
         }
     }
 
+    tvg_picture_set_accessible(document->picture, true);
     result = tvg_picture_load_data(document->picture,
                                    static_cast<const char*>(data),
                                    static_cast<uint32_t>(size),
@@ -395,6 +431,88 @@ float love_thorvg_document_intrinsic_width(const love_thorvg_document* document)
 float love_thorvg_document_intrinsic_height(const love_thorvg_document* document)
 {
     return document ? document->intrinsic_height : 0.0f;
+}
+
+
+int love_thorvg_document_element_bounds(love_thorvg_document* document, const char* id,
+                                        float* xywh, char* error, size_t error_capacity)
+{
+    if (!document || !id || !*id || !xywh)
+        return element_error(error, error_capacity, "invalid element bounds arguments");
+    try {
+        const auto& paints = find_elements(document, id);
+        if (paints.empty()) return element_error(error, error_capacity, "SVG element ID not found");
+        // A detached duplicate gives parent-space bounds independent of the
+        // document viewport, ancestor transforms, and previous render size.
+        auto copy = tvg_paint_duplicate(paints.front());
+        auto canvas = tvg_swcanvas_create(TVG_ENGINE_OPTION_DEFAULT);
+        if (!copy || !canvas) {
+            if (copy) tvg_paint_unref(copy, true);
+            if (canvas) tvg_canvas_destroy(canvas);
+            return LOVE_THORVG_OUT_OF_MEMORY;
+        }
+        // CSS fill-box origins use geometry, not the stroke outline.
+        auto geometry = tvg_accessor_new();
+        if (!geometry) {
+            tvg_paint_unref(copy, true);
+            tvg_canvas_destroy(canvas);
+            return LOVE_THORVG_OUT_OF_MEMORY;
+        }
+        tvg_accessor_set(geometry, copy, [](Tvg_Paint paint, void*) {
+            Tvg_Type type = TVG_TYPE_UNDEF;
+            tvg_paint_get_type(paint, &type);
+            if (type == TVG_TYPE_SHAPE) tvg_shape_set_stroke_width(paint, 0);
+            return true;
+        }, nullptr);
+        tvg_accessor_del(geometry);
+        uint32_t pixel = 0;
+        auto result = tvg_swcanvas_set_target(canvas, &pixel, 1, 1, 1, TVG_COLORSPACE_ABGR8888S);
+        if (succeeded(result)) result = tvg_canvas_add(canvas, copy);
+        if (!succeeded(result)) {
+            tvg_paint_unref(copy, true);
+            tvg_canvas_destroy(canvas);
+            set_error(error, error_capacity, "preparing element bounds", result);
+            return LOVE_THORVG_RENDER_ERROR;
+        }
+        result = tvg_canvas_update(canvas);
+        if (succeeded(result)) result = tvg_paint_get_aabb(copy, &xywh[0], &xywh[1], &xywh[2], &xywh[3]);
+        tvg_canvas_sync(canvas);
+        tvg_canvas_destroy(canvas);
+        if (!succeeded(result)) {
+            set_error(error, error_capacity, "measuring element bounds", result);
+            return LOVE_THORVG_RENDER_ERROR;
+        }
+        return LOVE_THORVG_OK;
+    } catch (...) {
+        return element_error(error, error_capacity, "could not index SVG elements");
+    }
+}
+
+int love_thorvg_document_set_element(love_thorvg_document* document, const char* id,
+                                     const float* abcdef, float opacity,
+                                     char* error, size_t error_capacity)
+{
+    if (!document || !id || !*id || !abcdef || !std::isfinite(opacity) || opacity < 0 || opacity > 1)
+        return element_error(error, error_capacity, "invalid element transform or opacity");
+    for (int i = 0; i < 6; ++i) {
+        if (!std::isfinite(abcdef[i])) return element_error(error, error_capacity, "non-finite element transform");
+    }
+    try {
+        const auto& paints = find_elements(document, id);
+        if (paints.empty()) return element_error(error, error_capacity, "SVG element ID not found");
+        const Tvg_Matrix matrix = {abcdef[0], abcdef[2], abcdef[4], abcdef[1], abcdef[3], abcdef[5], 0, 0, 1};
+        for (auto paint : paints) {
+            auto result = tvg_paint_set_transform(paint, &matrix);
+            if (succeeded(result)) result = tvg_paint_set_opacity(paint, static_cast<uint8_t>(std::lround(opacity * 255)));
+            if (!succeeded(result)) {
+                set_error(error, error_capacity, "updating SVG element", result);
+                return LOVE_THORVG_RENDER_ERROR;
+            }
+        }
+        return LOVE_THORVG_OK;
+    } catch (...) {
+        return element_error(error, error_capacity, "could not index SVG elements");
+    }
 }
 
 }  // extern "C"

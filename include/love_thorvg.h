@@ -92,6 +92,17 @@ LOVE_THORVG_API float love_thorvg_document_total_frames(const love_thorvg_docume
 LOVE_THORVG_API float love_thorvg_document_intrinsic_width(const love_thorvg_document* document);
 LOVE_THORVG_API float love_thorvg_document_intrinsic_height(const love_thorvg_document* document);
 
+
+/* SVG element editing. IDs match every instance, in the loaded scene. IDs inside <use> content may be discarded
+ * by the SVG loader; target a named wrapper around the use instead. Matrices replace the local transform (SVG a,b,c,d,e,f order).
+ * Bounds are measured in parent coordinates, before ancestor transforms. */
+LOVE_THORVG_API int love_thorvg_document_element_bounds(
+    love_thorvg_document* document, const char* id, float* xywh,
+    char* error, size_t error_capacity);
+LOVE_THORVG_API int love_thorvg_document_set_element(
+    love_thorvg_document* document, const char* id, const float* abcdef,
+    float opacity, char* error, size_t error_capacity);
+
 #ifdef __cplusplus
 }
 #endif

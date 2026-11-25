@@ -2,6 +2,7 @@ function love.load()
   local ok, err = pcall(function()
     local thorvg = require('love_thorvg')
     assert(thorvg.capabilities.svgFonts)
+    require('elements')(thorvg)
     local svg = '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128"><text x="8" y="90" font-family="TestFont" font-size="80" fill="#ffffff">AB</text></svg>'
     assert(love.filesystem.write('text.svg', svg))
     local config = {fonts = {TestFont = 'Abel-Regular.ttf'}}
