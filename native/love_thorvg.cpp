@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <cstring>
 #include <new>
+#include <map>
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -70,6 +72,67 @@ std::string font_name(const char* source)
     return source;
 }
 
+// ThorVG's font registry is global. Share identical families across documents,
+// and reject conflicting registrations instead of silently changing live text.
+struct SharedFont {
+    std::vector<uint8_t> bytes;
+    size_t owners = 0;
+};
+std::map<std::string, SharedFont> fonts;
+std::mutex fonts_mutex;
+
+bool acquire_font(love_thorvg_document* document, const std::string& name,
+                  const std::vector<uint8_t>& bytes, const char* mime)
+{
+    std::lock_guard<std::mutex> lock(fonts_mutex);
+    auto found = fonts.find(name);
+    if (found != fonts.end() && found->second.bytes != bytes) {
+        document->asset_error = "font family already loaded with different data: " + name;
+        return false;
+    }
+    if (std::find(document->loaded_fonts.begin(), document->loaded_fonts.end(), name) != document->loaded_fonts.end()) return true;
+    if (found == fonts.end()) {
+        const auto result = tvg_font_load_data(name.c_str(), reinterpret_cast<const char*>(bytes.data()),
+                                              static_cast<uint32_t>(bytes.size()), mime, true);
+        if (!succeeded(result)) {
+            document->asset_error = "font decode failed: " + name;
+            return false;
+        }
+        found = fonts.emplace(name, SharedFont{bytes, 0}).first;
+    }
+    ++found->second.owners;
+    document->loaded_fonts.push_back(name);
+    return true;
+}
+
+void release_fonts(love_thorvg_document* document)
+{
+    std::lock_guard<std::mutex> lock(fonts_mutex);
+    for (const auto& name : document->loaded_fonts) {
+        auto found = fonts.find(name);
+        if (found != fonts.end() && --found->second.owners == 0) {
+            tvg_font_load_data(name.c_str(), nullptr, 0, nullptr, false);
+            fonts.erase(found);
+        }
+    }
+}
+
+bool preload_font(love_thorvg_document* document, const char* name)
+{
+    const auto source = std::string("name:") + name;
+    const auto required = document->resolver(source.c_str(), LOVE_THORVG_ASSET_FONT, nullptr, 0, document->resolver_user_data);
+    if (required == 0 || required > UINT32_MAX) {
+        document->asset_error = "font not found: " + std::string(name);
+        return false;
+    }
+    std::vector<uint8_t> bytes(required);
+    if (document->resolver(source.c_str(), LOVE_THORVG_ASSET_FONT, bytes.data(), bytes.size(), document->resolver_user_data) != required) {
+        document->asset_error = "font read failed: " + std::string(name);
+        return false;
+    }
+    return acquire_font(document, name, bytes, sniff_mime(bytes, name, LOVE_THORVG_ASSET_FONT));
+}
+
 bool resolve_asset(Tvg_Paint paint, const char* source, void* data)
 {
     auto* document = static_cast<love_thorvg_document*>(data);
@@ -95,13 +158,8 @@ bool resolve_asset(Tvg_Paint paint, const char* source, void* data)
     const char* mime = sniff_mime(bytes, source, asset_type);
     if (asset_type == LOVE_THORVG_ASSET_FONT) {
         const auto name = font_name(source);
-        auto result = tvg_font_load_data(name.c_str(), reinterpret_cast<const char*>(bytes.data()),
-                                         static_cast<uint32_t>(bytes.size()), mime, true);
-        if (!succeeded(result)) return false;
-        result = tvg_text_set_font(paint, name.c_str());
-        if (!succeeded(result)) return false;
-        document->loaded_fonts.push_back(name);
-        return true;
+        if (!acquire_font(document, name, bytes, mime)) return false;
+        return succeeded(tvg_text_set_font(paint, name.c_str()));
     }
 
     const auto result = tvg_picture_load_data(paint, reinterpret_cast<const char*>(bytes.data()),
@@ -169,8 +227,19 @@ int love_thorvg_document_create_with_resolver(
     unsigned threads, love_thorvg_asset_resolver resolver, void* resolver_user_data,
     love_thorvg_document** out_document, char* error, size_t error_capacity)
 {
+    return love_thorvg_document_create_with_fonts(data, size, mime_type, resource_path,
+        threads, resolver, resolver_user_data, nullptr, 0, out_document, error, error_capacity);
+}
+
+int love_thorvg_document_create_with_fonts(
+    const void* data, size_t size, const char* mime_type, const char* resource_path,
+    unsigned threads, love_thorvg_asset_resolver resolver, void* resolver_user_data,
+    const char* const* font_names, size_t font_count,
+    love_thorvg_document** out_document, char* error, size_t error_capacity)
+{
+    if (out_document) *out_document = nullptr;
     if (error && error_capacity > 0) error[0] = '\0';
-    if (!data || size == 0 || !out_document || size > UINT32_MAX) {
+    if (!data || size == 0 || !out_document || size > UINT32_MAX || (font_count && (!font_names || !resolver))) {
         if (error && error_capacity > 0) std::snprintf(error, error_capacity, "invalid document data");
         return LOVE_THORVG_INVALID_ARGUMENT;
     }
@@ -188,6 +257,14 @@ int love_thorvg_document_create_with_resolver(
         return LOVE_THORVG_ENGINE_ERROR;
     }
     document->engine_initialized = true;
+    for (size_t i = 0; i < font_count; ++i) {
+        if (!font_names[i] || !font_names[i][0] || !preload_font(document, font_names[i])) {
+            if (error && error_capacity > 0) std::snprintf(error, error_capacity, "%s",
+                document->asset_error.empty() ? "invalid font family" : document->asset_error.c_str());
+            love_thorvg_document_destroy(document);
+            return LOVE_THORVG_LOAD_ERROR;
+        }
+    }
 
     document->canvas = tvg_swcanvas_create(TVG_ENGINE_OPTION_DEFAULT);
     document->animation = tvg_animation_new();
@@ -234,9 +311,7 @@ void love_thorvg_document_destroy(love_thorvg_document* document)
         tvg_canvas_destroy(document->canvas);
     }
     if (document->animation) tvg_animation_del(document->animation);
-    for (const auto& name : document->loaded_fonts) {
-        tvg_font_load_data(name.c_str(), nullptr, 0, nullptr, false);
-    }
+    release_fonts(document);
     if (document->engine_initialized) tvg_engine_term();
     delete document;
 }

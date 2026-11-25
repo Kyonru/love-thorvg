@@ -21,7 +21,8 @@ Options:
 - `resourcePath`: native resource directory for external file references.
 - `assetRoot`: virtual-filesystem directory used for relative image and font
   references; defaults to the document's directory.
-- `fonts`: table mapping Lottie font-family names to virtual-filesystem paths.
+- `fonts`: table mapping font-family names to virtual-filesystem paths. For desktop SVGs,
+  mapped fonts are preloaded before parsing (requires `capabilities.svgFonts`).
 - `assetResolver(source, kind)`: optional custom resolver. It receives the
   source string and either `"picture"` or `"font"`, and returns a string or
   LÖVE `Data` object containing the asset bytes. Returning `nil` declines it.

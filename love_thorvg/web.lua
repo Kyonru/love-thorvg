@@ -226,7 +226,7 @@ function Document:release()
   if self.imageData then self.imageData:release(); self.imageData = nil end
 end
 
-local M = {_VERSION = native.version(), _EXPERIMENTAL_WEB = true, Document = Document}
+local M = {_VERSION = native.version(), _EXPERIMENTAL_WEB = true, Document = Document, capabilities = {svgFonts = false}}
 
 function M.new(path, options)
   assert(love and love.filesystem and love.image and love.graphics, 'love-thorvg must run inside LÖVE')
@@ -235,6 +235,8 @@ function M.new(path, options)
   assert(bytes, readError)
   if type(bytes) ~= 'string' and bytes.getString then bytes = bytes:getString() end
   local mimeType = options.mimeType or mimeTypes[extension(path)] or extension(path)
+  assert(not ((mimeType == 'svg' or mimeType == 'image/svg+xml') and options.fonts and next(options.fonts)),
+    'SVG font preloading is currently supported by the desktop backend only')
   local resolver = makeAssetResolver(path, options)
   local handle, duration, totalFrames, intrinsicWidth, intrinsicHeight = native.new(
     bytes, mimeType, options.resourcePath or '', options.threads or 0, resolver)

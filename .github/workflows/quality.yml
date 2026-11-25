@@ -33,6 +33,19 @@ jobs:
       - run: meson setup build --wrap-mode=forcefallback
       - run: meson compile -C build
       - run: meson test -C build --print-errorlogs
+      - name: Install headless LÖVE
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y love xvfb xauth
+      - name: Verify Lua SVG font integration
+        if: runner.os == 'Linux'
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          mkdir -p build/love-font-test/love_thorvg/native/linux-x64
+          cp tests/love-fonts/*.lua tests/assets/Abel-Regular.ttf build/love-font-test/
+          cp love_thorvg/*.lua build/love-font-test/love_thorvg/
+          cp build/liblove_thorvg.so build/love-font-test/love_thorvg/native/linux-x64/
+          timeout 60s xvfb-run -a love build/love-font-test
       - run: python -m unittest tests.test_combine_packages
       - run: python scripts/stage.py build dist
       - uses: actions/upload-artifact@v7

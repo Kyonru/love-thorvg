@@ -66,6 +66,15 @@ LOVE_THORVG_API int love_thorvg_document_create_with_resolver(
     char* error,
     size_t error_capacity);
 
+/* Additive ABI 2 API: preload named fonts through the resolver before parsing.
+ * Font bytes are copied and retained until the last owning document is destroyed.
+ * Concurrent documents using a family must supply identical bytes. */
+LOVE_THORVG_API int love_thorvg_document_create_with_fonts(
+    const void* data, size_t size, const char* mime_type, const char* resource_path,
+    unsigned threads, love_thorvg_asset_resolver resolver, void* resolver_user_data,
+    const char* const* font_names, size_t font_count,
+    love_thorvg_document** out_document, char* error, size_t error_capacity);
+
 LOVE_THORVG_API void love_thorvg_document_destroy(love_thorvg_document* document);
 
 LOVE_THORVG_API int love_thorvg_document_render(

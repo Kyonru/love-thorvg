@@ -54,6 +54,13 @@ if get_option('build_tests') and not is_web
     include_directories: include_directories('include'),
   )
   test('native API', native_test)
+  font_test = executable(
+    'font-test',
+    'tests/font_test.cpp',
+    link_with: love_thorvg_library,
+    include_directories: include_directories('include'),
+  )
+  test('SVG fonts', font_test, args: [meson.current_source_dir() / 'tests/assets/Abel-Regular.ttf'])
 endif
 
 if get_option('web_harness')
