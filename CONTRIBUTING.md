@@ -51,7 +51,7 @@ ThorVG CPU canvas → reusable LÖVE ImageData → Image:replacePixels
 
 The native boundary accepts document bytes rather than paths so assets loaded
 through LÖVE's virtual filesystem work in development and `.love` archives.
-ThorVG is pinned to the stable 1.1.4 source revision and built with its CPU, SVG,
+ThorVG is pinned to an exact 1.2.0-dev source revision and built with its CPU, SVG,
 Lottie, and bundled PNG implementations. The bundled PNG decoder keeps release
 artifacts independent of Homebrew or another system package manager.
 

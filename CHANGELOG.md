@@ -2,7 +2,7 @@
 
 ## v0.3.0 — 2026-11-25
 
-- Update the bundled engine from an earlier 1.2.0 development snapshot to stable ThorVG 1.1.4.
+- Update the bundled ThorVG 1.2.0-dev snapshot to November 25 commit `7793957774e5b494c07ac77cf555789ce3ae059c`.
 - Document the ThorVG release, immutable source pin, and engine responsibilities in the README.
 
 - Add desktop SVG element transforms, opacity, and parent-space bounds by ID.

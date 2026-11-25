@@ -14,12 +14,12 @@ icons, loaders, onboarding animation, and other modest animation workloads.
 
 ## Bundled ThorVG
 
-love-thorvg **0.3.0** bundles stable [ThorVG **1.1.4**](https://github.com/thorvg/thorvg/releases/tag/v1.1.4),
-pinned to commit [`47658a80842f3b3182aded036190edf459beabe7`](https://github.com/thorvg/thorvg/commit/47658a80842f3b3182aded036190edf459beabe7).
+love-thorvg **0.3.0** bundles [ThorVG **1.2.0-dev**](https://github.com/thorvg/thorvg), a development snapshot from November 25, 2026,
+pinned to commit [`7793957774e5b494c07ac77cf555789ce3ae059c`](https://github.com/thorvg/thorvg/commit/7793957774e5b494c07ac77cf555789ce3ae059c).
 ThorVG supplies SVG/Lottie parsing and CPU vector rasterization; love-thorvg
 provides LÖVE filesystem integration, playback, reusable textures, and the Lua API.
 Desktop archives include the engine and its license; no separate ThorVG install
-is needed. The reproducible source pin lives in `subprojects/thorvg.wrap`.
+is needed. This is not a stable ThorVG release. The reproducible source pin lives in `subprojects/thorvg.wrap`.
 
 ## Availability
 

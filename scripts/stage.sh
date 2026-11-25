@@ -17,8 +17,11 @@ case "$arch" in
   aarch64) arch=arm64 ;;
 esac
 
-source_path=$(find "$build_dir" -type f -name "$library" -print -quit)
-if [ -z "$source_path" ]; then
+source_path="$build_dir/$library"
+if [ ! -f "$source_path" ]; then
+  source_path="$build_dir/lib$library"
+fi
+if [ ! -f "$source_path" ]; then
   echo "could not find $library under $build_dir" >&2
   exit 1
 fi

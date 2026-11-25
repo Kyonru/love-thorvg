@@ -48,13 +48,7 @@ def main() -> None:
     system, architecture, library_name = target()
     build_dir = args.build_dir.resolve()
     output_dir = args.output_dir.resolve()
-    matches = [path for path in build_dir.rglob(library_name) if path.is_file()]
-    if not matches and system == "windows":
-        matches = [
-            path
-            for path in build_dir.rglob(f"*{library_name}")
-            if path.is_file()
-        ]
+    matches = [path for path in [build_dir / library_name, build_dir / ("lib" + library_name)] if path.is_file()]
     if not matches:
         candidates = sorted(
             str(path.relative_to(build_dir))
